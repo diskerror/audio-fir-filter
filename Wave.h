@@ -151,7 +151,9 @@ typedef struct FormatExtensibleData : FormatPlusData
 	Guid_t          subFormat;
 } FormatExtensibleData_t;
 
-//	Chunk data with type 'bext' and minimum size of 602 will have this structure.
+//	Describes Broadcast Audio Extension data structure.
+//		id = 'best'
+//		size >= 602
 typedef struct BroadcastAudioExtension
 {
 	char           Description[256];          // ASCII : Description of the sound sequence

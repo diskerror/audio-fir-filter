@@ -43,49 +43,6 @@ float_t dither()
 	return low(gen) + hi(gen); // This creates triangular dither.
 }
 
-//void convolv(uint16_t chan,
-//			 uint16_t channelCount,
-//			 uint32_t sampleQuantity,
-//			 int32_t Mo2,
-//			 WindowedSinc sinc,
-//			 int16_t *samples,
-//			 float_t *output,
-//			 uint32_t progressCount
-//			)
-//{
-//	//	for each input sample
-//	for (uint32_t samp = chan; samp < sampleQuantity; samp += channelCount)
-//	{
-//		//	accumulator
-//		long double acc = 0.0;
-//
-//		//	for each sinc member
-//		for (int32_t m = -Mo2; m <= Mo2; m++)
-//		{
-//			int32_t mc = m * channelCount;
-//
-//			if (((int32_t) samp + mc) < 0 || (samp + mc) >= sampleQuantity) { continue; }
-//
-////		acc = samples[samp + mc] * sinc[m] + acc;
-//			acc = fma(samples[samp + mc], sinc[m], acc);
-//		}
-//		//	output[samp][chan] = acc
-//		output[samp] = (float_t) acc;
-//
-//		//	progress bar, do only every 100 samples
-//		if (progressCount % 4181 == 0)
-//		{
-//			float_t progress         = (float_t) progressCount / sampleQuantity;
-//			uint8_t progressPosition = floor((float_t) PROGRESS_WIDTH * progress);
-//
-//			cout << "\r" << "["
-//				 << string(progressPosition, '=') << ">" << string(PROGRESS_WIDTH - progressPosition, ' ')
-//				 << "] " << progress * 100.0 << " %           " << flush;
-//		}
-//		progressCount++;
-//	}
-//}
-
 int main(int argc, char **argv)
 {
 	auto exitVal = EXIT_SUCCESS;
@@ -95,7 +52,8 @@ int main(int argc, char **argv)
 		//  Check for input parameter.
 		if (argc < 2)
 		{
-			println("Applies high-pass FIR filter to WAV file with cutoff at 20Hz.");
+			cout << "Applies high-pass FIR filter to WAV file with cutoff at 20Hz." << endl;
+			cout << "Saves only format 'fmt ' and broadcast extended 'best' chunks with audio." << endl;
 			return exitVal;
 		}
 		
@@ -106,23 +64,19 @@ int main(int argc, char **argv)
 		const double slope = 20;    //	transition ~= slope / sampleRate
 		
 		
-		HeaderChunk_t          header;
-		Chunk_t                chunkExam;
-		FormatExtensibleData_t format;
-		uint32_t               formatSize;
-		BroadcastAudioExt_t    bExt;
-		uint32_t               bextSize;
-		uint32_t               dataSize;
-//		char                   *allChunks;		//	No. There could be chunks after data chunk.
-//		uint32_t               allChunksSize;
-		char                   *data = nullptr;
-		
-		WindowedSinc<long double> sinc;
-		
-		
 		//  Loop over file names.
 		for (uint32_t a = 1; a < argc; a++)
 		{
+			HeaderChunk_t          header;
+			Chunk_t                chunkExam;
+			FormatExtensibleData_t format;
+			uint32_t               formatSize;
+			BroadcastAudioExt_t    bExt;
+			uint32_t               bextSize = sizeof(bExt);
+			uint32_t               dataSize;
+			char                   *data    = nullptr;
+			
+			
 			string   inputFileName(argv[a]);
 			fs::path filePath(inputFileName);
 			
@@ -157,7 +111,7 @@ int main(int argc, char **argv)
 				{
 					case 'fmt ':
 						formatSize = chunkExam.size;
-						inputStream.read(reinterpret_cast<char *>(&format), chunkExam.size);
+						inputStream.read(reinterpret_cast<char *>(&format), formatSize);
 						
 						////////////////////////////////////////////////////////////////////////////////
 						//////////////////     ONLY 16-BIT PCM SAMPLES FOR NOW    //////////////////////
@@ -167,42 +121,27 @@ int main(int argc, char **argv)
 							inputStream.close();
 							continue;
 						}
-
-//						if (format.channelCount > 4)
-//						{
-//							cout << inputFileName << endl << "  WAVE file must have 4 channels or less." << endl;
-//							inputStream.close();
-//							continue;
-//						}
 						break;
 					
 					case 'bext':
-						bextSize = chunkExam.size;
-						inputStream.read(reinterpret_cast<char *>(&bExt), chunkExam.size);
+						inputStream.read(reinterpret_cast<char *>(&bExt), bextSize);
+						//	skip over remainder, if any
+						inputStream.seekg((uint32_t) chunkExam.size - bextSize, ios_base::cur);
 						break;
 					
 					case 'data':
-					{
-						dataSize      = chunkExam.size;
-//						allChunksSize = inputStream.tellg();
-						
-						//	read data into data buffer
+						dataSize = chunkExam.size;
 						if (data != nullptr) { delete data; }
 						data = (char *) calloc(dataSize, 1);
 						inputStream.read(data, dataSize);
-					}
 						break;
 						
 						// skip over JUNK and fact (and what else?).
 					default:
-						inputStream.seekg((uint32_t) inputStream.tellg() + chunkExam.size);
+						inputStream.seekg(chunkExam.size, ios_base::cur);
 						break;
 				}
 			}
-			
-//			inputStream.seekg(ios_base::beg);
-//			allChunks = (char *) calloc(allChunksSize, 1);
-//			inputStream.read(allChunks, allChunksSize);
 			
 			inputStream.close();
 			
@@ -211,49 +150,17 @@ int main(int argc, char **argv)
 			uint32_t sampleQuantity = dataSize / bytesPerSample;
 			auto     *samples       = reinterpret_cast<little_int16_t *>(data); // little_int16_t
 			
-			sinc.SetSinc((freq / format.sampleRate), (slope / format.sampleRate));
+			WindowedSinc<long double> sinc((freq / format.sampleRate), (slope / format.sampleRate));
 			sinc.ApplyBlackman();
 			sinc.MakeIntoHighPass();
 			
-			auto Mo2 = sinc.Get_M() / 2;
+			auto Mo2 = (int32_t) sinc.Get_M() / 2;
 			
 			//	define temporary output buffer[samps][chan], befor normalizing and reducing to file bits
 			auto output = (float_t *) calloc(sampleQuantity, sizeof(float_t));
 			
 			uint32_t progressCount = 0;
 			cout << fixed << setprecision(1) << flush;
-
-//			if (format.channelCount == 1)
-//			{
-//				convolv(1, 1, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//			}
-//			else if (format.channelCount == 2)
-//			{
-//				thread L(convolv, 1, 2, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//				thread R(convolv, 2, 2, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//				L.join();
-//				R.join();
-//			}
-//			else if (format.channelCount == 3)
-//			{
-//				thread L(convolv, 1, 3, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//				thread C(convolv, 2, 3, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//				thread R(convolv, 3, 3, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//				L.join();
-//				C.join();
-//				R.join();
-//			}
-//			else if (format.channelCount == 4)
-//			{
-//				thread L(convolv, 1, 4, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//				thread C(convolv, 2, 4, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//				thread R(convolv, 3, 4, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//				thread S(convolv, 4, 4, sampleQuantity, Mo2, std::ref(sinc), samples, output, std::ref(progressCount));
-//				L.join();
-//				C.join();
-//				R.join();
-//				S.join();
-//			}
 			
 			//	for each channel
 			for (uint16_t chan = 0; chan < format.channelCount; chan++)
@@ -272,7 +179,7 @@ int main(int argc, char **argv)
 						if (((int32_t) samp + mc) < 0 || (samp + mc) >= sampleQuantity) { continue; }
 
 //						acc = samples[samp + chan + m] * (sinc[m]) + acc;
-						acc = fma(samples[samp + mc], sinc[m], acc);
+						acc = fmal((long double) samples[samp + mc], sinc[m], acc);
 					}
 					//	output[samp][chan] = acc
 					output[samp] = (float_t) acc;
@@ -318,13 +225,13 @@ int main(int argc, char **argv)
 			
 			//  Open output stream.
 			string   tempOutputName = inputFileName + "TEMPORARY";
-			ofstream outputStream(tempOutputName.c_str(), ios_base::out | ios_base::binary);
+			ofstream outputStream(tempOutputName.c_str(), ios_base::in | ios_base::out | ios_base::binary);
 
 //			Write header.
 //			We know most of the details from the input file chunks.
 //			Only the 'data', 'bext', 'fmt ', and header chunks are saved.
-			header.size = dataSize + 8 + bextSize + 8 + formatSize + 8 + sizeof(header.type);
-			outputStream.write(reinterpret_cast<char *>(&header), 12);
+			header.size = dataSize + 8 + sizeof(bExt) + 8 + formatSize + 8 + sizeof(header.type);
+			outputStream.write((char *) &header, 12);
 			
 			outputStream.write("fmt ", 4);
 			outputStream.write(reinterpret_cast<char *>(&formatSize), 4);
@@ -336,8 +243,7 @@ int main(int argc, char **argv)
 			
 			outputStream.write("data", 4);
 			outputStream.write(reinterpret_cast<char *>(&dataSize), 4);
-
-//			outputStream.write(allChunks, allChunksSize);
+			
 			outputStream.write(data, dataSize);
 			
 			outputStream.close();
@@ -345,10 +251,6 @@ int main(int argc, char **argv)
 			delete data;
 			data     = nullptr;
 			dataSize = 0;
-			
-//			delete allChunks;
-//			allChunks     = nullptr;
-//			allChunksSize = 0;
 
 //			remove(inputFileName.c_str());
 			rename(tempOutputName.c_str(), (inputFileName).c_str());

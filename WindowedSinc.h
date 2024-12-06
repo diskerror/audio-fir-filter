@@ -72,7 +72,7 @@ public:
 		for (i = 0; i < Mo2; i++)
 		{
 			imMo2 = i - Mo2;
-			H[i] = sinl(natFc * imMo2) / imMo2;
+			H[i] = sin(natFc * imMo2) / imMo2;
 		}
 		
 		//	account for divide by zero
@@ -81,7 +81,7 @@ public:
 		for (; i <= M; i++)
 		{
 			imMo2 = i - Mo2;
-			H[i] = sinl(natFc * imMo2) / imMo2;
+			H[i] = sin(natFc * imMo2) / imMo2;
 		}
 		
 		Hc = H + Mo2;
@@ -132,7 +132,7 @@ public:
 		for (uint32_t i = 0; i <= M; i++)
 		{
 			twoPiIoM = twoPi * (i + 1) / (M + 2);
-			H[i] *= (0.42 - (0.5 * cosl(twoPiIoM)) + (0.08 * cosl(2.0 * twoPiIoM)));
+			H[i] *= (0.42 - (0.5 * cos(twoPiIoM)) + (0.08 * cos(2.0 * twoPiIoM)));
 		}
 		
 		NormalGain();
@@ -142,7 +142,7 @@ public:
 	{
 		for (uint32_t i = 0; i <= M; i++)
 		{
-			H[i] *= (0.54 - (0.46 * cosl(twoPi * i / M)));
+			H[i] *= (0.54 - (0.46 * cos(twoPi * i / M)));
 		}
 		
 		NormalGain();
