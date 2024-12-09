@@ -19,7 +19,7 @@ all: lowcut
 lowcut: main.cp WindowedSinc.h Wave.h Makefile
 	$(CX) main.cp
 #	cp ~/ownCloud/Recordings/Treat\ Frommer\ 1987-04-26.wav ~/Desktop
-#	./$@ '/Volumes/WDBlack2/Desktop/Treat Frommer 1987-04-26.wav'
+#	./$@ '~/Desktop/Treat Frommer 1987-04-26.wav'
 
 
 clean:
