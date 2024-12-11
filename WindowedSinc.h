@@ -42,7 +42,8 @@ public:
 //		CopyH(s);
 //	}
 
-	~WindowedSinc() { delete H; }
+	~WindowedSinc()
+	{ delete H; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 	//  Cutoff frequency Fc in fraction of sample rate;
@@ -67,8 +68,7 @@ public:
 		int32_t i;
 		int32_t imMo2;
 
-		for (i = 0; i < Mo2; i++)
-		{
+		for (i = 0; i < Mo2; i++) {
 			imMo2 = i - Mo2;
 			H[i] = sin(natFc * imMo2) / imMo2;
 		}
@@ -76,8 +76,7 @@ public:
 		//	account for divide by zero
 		H[i++] = natFc;
 
-		for (; i <= M; i++)
-		{
+		for (; i <= M; i++) {
 			imMo2 = i - Mo2;
 			H[i] = sin(natFc * imMo2) / imMo2;
 		}
@@ -89,21 +88,23 @@ public:
 	}
 
 	//  returns coeficient at index without range checking
-	inline long double GetCoeff(uint32_t i) { return H[i]; }
+	inline long double GetCoeff(uint32_t i)
+	{ return H[i]; }
 
 	//	return pointer to array of coefficients
-	inline long double *Get_H() { return H; }
+	inline long double *Get_H()
+	{ return H; }
 
 	//	returns size of H in count of coefficients
-	inline uint32_t Get_M() { return M; }
+	inline uint32_t Get_M()
+	{ return M; }
 
 	// Normalize then apply gain.
 	void NormalGain(long double gain = 1.0)
 	{
 		long double sum = 0.0;
 
-		for (uint32_t i = 0; i <= M; i++)
-		{
+		for (uint32_t i = 0; i <= M; i++) {
 			sum += H[i];
 		}
 
@@ -115,8 +116,7 @@ public:
 	{
 		if (a != 1.0)  //  if not unity gain
 		{
-			for (uint32_t i = 0; i <= M; ++i)
-			{
+			for (uint32_t i = 0; i <= M; ++i) {
 				H[i] *= a;
 			}
 		}
@@ -127,8 +127,7 @@ public:
 	{
 		long double twoPiIoM;
 
-		for (uint32_t i = 0; i <= M; i++)
-		{
+		for (uint32_t i = 0; i <= M; i++) {
 			twoPiIoM = twoPi * (i + 1) / (M + 2);
 			H[i] *= (0.42 - (0.5 * cos(twoPiIoM)) + (0.08 * cos(2.0 * twoPiIoM)));
 		}
@@ -138,8 +137,7 @@ public:
 
 	void ApplyHamming()
 	{
-		for (uint32_t i = 0; i <= M; i++)
-		{
+		for (uint32_t i = 0; i <= M; i++) {
 			H[i] *= (0.54 - (0.46 * cos(twoPi * i / M)));
 		}
 
@@ -154,10 +152,12 @@ public:
 
 	//	For array operator, [0] points to the middle of the coefficients
 	//	i: -Mo2 <= i <= Mo2
-	inline long double operator[](int32_t i) { return *(Hc + i); }
+	inline long double operator[](int32_t i)
+	{ return *(Hc + i); }
 
 	//	IF unsigned int is used then index from the beginning.
-	inline long double operator[](uint32_t i) { return *(H + i); }
+	inline long double operator[](uint32_t i)
+	{ return *(H + i); }
 
 //	inline WindowedSinc &operator+(WindowedSinc &s);
 //	inline WindowedSinc &operator-(WindowedSinc &s);//{ return ( *this + (-s) ); }

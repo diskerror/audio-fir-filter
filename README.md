@@ -4,6 +4,8 @@ This is a workspace for—initially—building a low-cut FIR filter for audio fi
 
 Of course it needs option handling for things like cutoff frequency, slope, high or low pass filtering, and writing to a new file. It also needs to handle files larger than 4GB and file types other than WAVE. It also needs to handle bit-depths other than just 16-bit. It might also be appropriate to handle other audio file types and conversion of bit depths.
 
+If you are not familiar with FIR filters, this algorithm can seem quite slow, particularly with a steep slope (narrow transition band). It's faster than real-time with current hardware, even being single threaded. The largest native floating point type is used to keep the filter stable at the extreme settings as well as accuracy. A 20Hz slope works quite well. Narrower slopes have not been tested... yet. It's primary usage is to remove DC offset and very low frequency garbage from very old digital audio recordings.
+
 ## Cross Platform
 The Wave.h header file uses the Boost endianess file so it is anticipated that this program can be compiled on platforms with different endianess and maintain the proper WAVE byte order.
 

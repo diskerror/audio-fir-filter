@@ -49,11 +49,9 @@ int main(int argc, char **argv)
 	char    *data       = nullptr;
 	float_t *tempOutput = nullptr;
 
-	try
-	{
+	try {
 		//  Check for input parameter.
-		if (argc < 2)
-		{
+		if (argc < 2) {
 			println("Applies high-pass FIR filter to WAV file with cutoff at 20Hz.");
 			return exitVal;
 		}
@@ -66,8 +64,7 @@ int main(int argc, char **argv)
 
 
 		//  Loop over file names.
-		for (uint32_t a = 1; a < argc; a++)
-		{
+		for (uint32_t a = 1; a < argc; a++) {
 			HeaderChunk_t header;
 
 			FormatData_t format;
@@ -89,13 +86,11 @@ int main(int argc, char **argv)
 			fs::path filePath(inputFileName);
 
 			ifstream inputStream(inputFileName, ios_base::in | ios_base::binary);
-			if (!inputStream)
-			{
+			if (!inputStream) {
 				throw invalid_argument("There was a problem opening the input file.");
 			}
 
-			if (fs::file_size(filePath) < 1024)
-			{
+			if (fs::file_size(filePath) < 1024) {
 				cout << inputFileName << endl << "  File is too small." << endl;
 				inputStream.close();
 				continue;
@@ -103,24 +98,21 @@ int main(int argc, char **argv)
 
 			//	WAVE files always have a 12 byte header
 			inputStream.read((char *) &header, 12);
-			if (header.id != 'RIFF' || header.type != 'WAVE')
-			{
+			if (header.id != 'RIFF' || header.type != 'WAVE') {
 				cout << inputFileName << endl << " is not a WAVE file." << endl;
 				inputStream.close();
 				continue;
 			}
 
 			//	Look for Chunks and save appropriatly.
-			do
-			{
+			do {
 				Chunk_t chunkExam;
 				chunkExam.id   = 0;
 				chunkExam.size = 0;
 
 				inputStream.read((char *) &chunkExam, 8);
 
-				switch (chunkExam.id)
-				{
+				switch (chunkExam.id) {
 					case 'fmt ':
 						inputStream.read((char *) &format, formatChunk.size);
 						//	skip over remainder, if any
@@ -128,8 +120,7 @@ int main(int argc, char **argv)
 
 						////////////////////////////////////////////////////////////////////////////////
 						//////////////////     ONLY 16-BIT PCM SAMPLES FOR NOW    //////////////////////
-						if (format.type != 1 || format.bitsPerSample != 16)
-						{
+						if (format.type != 1 || format.bitsPerSample != 16) {
 							cout << inputFileName << endl << "  WAVE file must be 16-bit PCM format." << endl;
 							inputStream.close();
 							continue;
@@ -175,17 +166,14 @@ int main(int argc, char **argv)
 			cout << fixed << setprecision(1) << flush;
 
 			//	for each channel
-			for (uint16_t chan = 0; chan < format.channelCount; chan++)
-			{
+			for (uint16_t chan = 0; chan < format.channelCount; chan++) {
 				//	for each input sample in channel
-				for (uint32_t samp = chan; samp < sampleQuantity; samp += format.channelCount)
-				{
+				for (uint32_t samp = chan; samp < sampleQuantity; samp += format.channelCount) {
 					//	accumulator
 					long double acc = 0.0;
 
 					//	for each sinc member
-					for (int32_t m = -Mo2; m <= Mo2; m++)
-					{
+					for (int32_t m = -Mo2; m <= Mo2; m++) {
 						int32_t mc  = m * format.channelCount;
 						int64_t smc = samp + mc;
 
@@ -198,14 +186,13 @@ int main(int argc, char **argv)
 					tempOutput[samp] = (float_t) acc;
 
 					//	progress bar, do only every x samples
-					if (progressCount % 4181 == 0)
-					{
+					if (progressCount % 4181 == 0) {
 						auto progress         = (float_t) progressCount / (float_t) sampleQuantity;
 						auto progressPosition = (uint8_t) round((float_t) PROGRESS_WIDTH * progress);
 
 						cout << "\r" << "["
-							 << string(progressPosition, '=') << ">" << string(PROGRESS_WIDTH - progressPosition, ' ')
-							 << "] " << (progress * 100) + 0.05 << " %           " << flush;
+						     << string(progressPosition, '=') << ">" << string(PROGRESS_WIDTH - progressPosition, ' ')
+						     << "] " << (progress * 100) + 0.05 << " %           " << flush;
 					}
 					progressCount++;
 				}
@@ -218,8 +205,7 @@ int main(int argc, char **argv)
 			float_t maxVal = 0;
 
 			//	for each sample of all channels
-			for (uint32_t samp = 0; samp < sampleQuantity; samp++)
-			{
+			for (uint32_t samp = 0; samp < sampleQuantity; samp++) {
 				//	find max absolute value
 				maxVal = mMax(maxVal, mAbs(tempOutput[samp]));
 			}
@@ -229,9 +215,10 @@ int main(int argc, char **argv)
 			auto adjustment = (float_t) INT16_MAX / maxVal;
 
 			//	and convert output buffer into writable buffer, using input buffer
-			for (uint32_t samp = 0; samp < sampleQuantity; samp++)
-			{
-				samples[samp] = (little_int16_t) (int16_t) round(fma(tempOutput[samp], adjustment, dither()));
+			for (uint32_t samp = 0; samp < sampleQuantity; samp++) {
+				//  Speculation (is this correct?):
+				//  This truncates rather than rounds to prevent added dither from outputting values greater than INT16_MAX.
+				samples[samp] = (little_int16_t) fma(tempOutput[samp], adjustment, dither());
 			}
 
 			delete tempOutput;
@@ -240,8 +227,7 @@ int main(int argc, char **argv)
 			//  Open output stream.
 			string   tempOutputName = inputFileName + "TEMPORARY";
 			ofstream outputStream(tempOutputName, ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
-			if (!outputStream.is_open())
-			{
+			if (!outputStream.is_open()) {
 				throw runtime_error(inputFileName + " Couldn't open the file for output");
 			}
 
@@ -258,9 +244,9 @@ int main(int argc, char **argv)
 
 			Chunk_t junkChunk;
 			junkChunk.id   = 'JUNK';
-			junkChunk.size = 4096 - (12 + 8 + 16 + 8 + 602 + 8);
+			//  header(12), format(8 + 16), bext(8 + 602), junk ID & size(8), data ID & size(8)
+			junkChunk.size = 4096 - (12 + (8 + 16) + (8 + 602) + 8 + 8);
 			outputStream.write((char *) &junkChunk, 8);
-//			outputStream.write(string(junkChunk.size, 0).c_str(), junkChunk.size);
 			outputStream.seekp(junkChunk.size, ios_base::cur);
 
 			outputStream.write((char *) &dataChunk, 8);
@@ -276,8 +262,7 @@ int main(int argc, char **argv)
 
 		} //  Loop over file names.
 	} // try
-	catch (exception &e)
-	{
+	catch (exception &e) {
 		cerr << e.what() << endl;
 		exitVal = EXIT_FAILURE;
 	}

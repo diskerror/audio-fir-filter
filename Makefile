@@ -18,8 +18,8 @@ all: lowcut
 
 lowcut: main.cp WindowedSinc.h Wave.h Makefile
 	$(CX) main.cp
-#	cp ~/ownCloud/Recordings/Treat\ Frommer\ 1987-04-26.wav ~/Desktop
-#	./$@ '~/Desktop/Treat Frommer 1987-04-26.wav'
+#	cp -f ~/ownCloud/Recordings/Treat\ Frommer\ 1987-04-26.wav ~/Desktop
+#	./$@ ~/Desktop/Treat\ Frommer\ 1987-04-26.wav
 
 
 clean:
