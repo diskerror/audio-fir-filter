@@ -225,6 +225,7 @@ int main(int argc, char **argv)
 			tempOutput = nullptr;
 
 			//  Open output stream.
+			//  Safe save. Create new temp file, then delete old file and rename the new one.
 			string   tempOutputName = inputFileName + "TEMPORARY";
 			ofstream outputStream(tempOutputName, ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
 			if (!outputStream.is_open()) {
@@ -257,7 +258,8 @@ int main(int argc, char **argv)
 			delete data;
 			data = nullptr;
 
-//			remove(inputFileName.c_str());
+			//  Finnish safe save.
+			remove(inputFileName.c_str());
 			rename(tempOutputName.c_str(), (inputFileName).c_str());
 
 		} //  Loop over file names.
