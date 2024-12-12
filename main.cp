@@ -80,6 +80,7 @@ int main(int argc, char **argv)
 			Chunk_t dataChunk;
 			dataChunk.id   = 'data';
 			dataChunk.size = 0;
+			streampos dataStart = 0;
 
 
 			string   inputFileName(argv[a]);
@@ -117,14 +118,6 @@ int main(int argc, char **argv)
 						inputStream.read((char *) &format, formatChunk.size);
 						//	skip over remainder, if any
 						inputStream.seekg(chunkExam.size - formatChunk.size, ios_base::cur);
-
-						////////////////////////////////////////////////////////////////////////////////
-						//////////////////     ONLY 16-BIT PCM SAMPLES FOR NOW    //////////////////////
-						if (format.type != 1 || format.bitsPerSample != 16) {
-							cout << inputFileName << endl << "  WAVE file must be 16-bit PCM format." << endl;
-							inputStream.close();
-							continue;
-						}
 						break;
 
 					case 'bext':
@@ -136,7 +129,7 @@ int main(int argc, char **argv)
 					case 'data':
 						dataChunk.size = chunkExam.size;
 						data = new char[dataChunk.size];
-						inputStream.read(data, dataChunk.size);
+						dataStart = inputStream.tellg();
 						break;
 
 						// skip over JUNK and fact (and what else?).
@@ -145,6 +138,17 @@ int main(int argc, char **argv)
 						break;
 				}
 			} while (inputStream.good());
+
+			////////////////////////////////////////////////////////////////////////////////
+			//////////////////     ONLY 16-BIT PCM SAMPLES FOR NOW    //////////////////////
+			if (format.type != 1 || format.bitsPerSample != 16) {
+				cout << inputFileName << endl << "  WAVE file must be 16-bit PCM format." << endl;
+				inputStream.close();
+				continue;
+			}
+
+			inputStream.seekg(dataStart);
+			inputStream.read(data, dataChunk.size);
 
 			inputStream.close();
 
