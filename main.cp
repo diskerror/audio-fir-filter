@@ -40,7 +40,7 @@ inline float_t dither()
 	static mt19937                            gen(rd());
 	static uniform_real_distribution<float_t> low(-1, 0);
 	static uniform_real_distribution<float_t> hi(0, 1);
-	return low(gen) + hi(gen); // This creates triangular dither.
+	return low(gen) + hi(gen); // This creates triangular dither with values from -1.0 to 1.0.
 }
 
 int main(int argc, char **argv)
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 						//	skip over remainder, if any
 						inputStream.seekg(chunkExam.size - bextChunk.size, ios_base::cur);
 						break;
-
+					
 					case 'data':
 						dataChunk.size = chunkExam.size;
 						data = new char[dataChunk.size];
@@ -163,7 +163,8 @@ int main(int argc, char **argv)
 
 			auto Mo2 = (int32_t) sinc.Get_M() / 2;
 
-			//	define temporary output buffer[samps][chan], befor normalizing and reducing to file bits
+			//	define temporary output buffer[samps][chan],
+			//		before normalizing and reducing to original number of bits
 			tempOutput = new float_t[sampleQuantity];
 
 			uint32_t progressCount = 0;
@@ -173,7 +174,7 @@ int main(int argc, char **argv)
 			for (uint16_t chan = 0; chan < format.channelCount; chan++) {
 				//	for each input sample in channel
 				for (uint32_t samp = chan; samp < sampleQuantity; samp += format.channelCount) {
-					//	accumulator
+					//	Accumulator. Initialized to zero for each time through loop.
 					long double acc = 0.0;
 
 					//	for each sinc member
@@ -183,9 +184,10 @@ int main(int argc, char **argv)
 
 						if (smc < 0 || smc >= sampleQuantity) { continue; }
 
-//						acc = samples[samp + chan * m] * (sinc[m]) + acc;
+//						acc = samples[samp + chan * m] * sinc[m] + acc;
 						acc = fmal(samples[smc], sinc[m], acc);
-					}
+					}	//	End loop over sinc kernel.
+					
 					//	tempOutput[samp][chan] = acc
 					tempOutput[samp] = (float_t) acc;
 
@@ -199,8 +201,9 @@ int main(int argc, char **argv)
 						     << "] " << (progress * 100) + 0.05 << " %           " << flush;
 					}
 					progressCount++;
-				}
-			}
+				}	//	End loop over samples.
+			}	//	End loop over channels.
+			
 			cout << "\r" << "[" << std::string(PROGRESS_WIDTH + 1, '=') << "] 100.0 %                 " << endl;
 			std::cout.flush();
 
@@ -266,15 +269,15 @@ int main(int argc, char **argv)
 			remove(inputFileName.c_str());
 			rename(tempOutputName.c_str(), (inputFileName).c_str());
 
-		} //  Loop over file names.
+		} //  End loop over file names.
 	} // try
 	catch (exception &e) {
 		cerr << e.what() << endl;
 		exitVal = EXIT_FAILURE;
 	}
-
-	delete data;
-	delete tempOutput;
+	
+	if(data != nullptr)       { delete data; }
+	if(tempOutput != nullptr) { delete tempOutput; }
 
 	return exitVal;
 

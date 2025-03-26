@@ -5,22 +5,26 @@ CP = clang++ -std=c++23
 #	Boost version
 BV = 1.81
 
-CX = $(CP) -Wall -Winvalid-pch \
-	-I/opt/local/libexec/boost/$(BV)/include \
-	-L/usr/local/lib \
-	-L/opt/local/libexec/boost/$(BV)/lib \
-	-O3 -o $@
-#	-Wl,-rpath,/usr/local/lib,/opt/local/libexec/boost/$(BV)/lib \
+CX = $(CP) -Wall -Winvalid-pch -O3 -I/opt/local/libexec/boost/$(BV)/include
 
-.PHONY: all clean
+LIBS= -L/usr/local/lib -L/opt/local/libexec/boost/$(BV)/lib
+
+SRCS=$(wildcard *.cp)
+HDRS=$(wildcard *.h)
+
+.PHONY: all clean echo
 
 all: lowcut
 
-lowcut: main.cp WindowedSinc.h Wave.h Makefile
-	$(CX) main.cp
+lowcut: $(SRCS) $(HDRS) makefile
+	$(CX) $(OBJS) $(SRCS) -o $@
 #	cp -f ~/ownCloud/Recordings/Treat\ Frommer\ 1987-04-26.wav ~/Desktop
 #	./$@ ~/Desktop/Treat\ Frommer\ 1987-04-26.wav
 
 
 clean:
-	rm -f lowcut
+	@rm -f lowcut ${OBJS}
+
+echo:
+	@echo ${SRCS}
+	
