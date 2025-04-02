@@ -7,30 +7,25 @@
 #pragma once
 
 #include <boost/endian.hpp>
-#include "mmreg.h"
 
 using namespace boost::endian;
 
 
-typedef big_uint32_t chunkID_t;
-typedef big_uint32_t ckID_t;
-
 // Parent class
 struct ChunkID {
-    chunkID_t id;
+    big_uint32_t id;
 };
 
-typedef struct Chunk : ChunkID {
-//	chunkID_t		id;
+typedef struct ChunkHead : ChunkID {
+//	big_uint32_t	id;
     little_uint32_t size;
-    char8_t         data[];
-} Chunk_t;
+} ChunkHead_t;
 
-typedef struct HeaderChunk : ChunkID {
-//	chunkID_t		id;
-    little_uint32_t size;
-    big_uint32_t    type;
-} HeaderChunk_t;
+typedef struct Chunk : ChunkHead {
+//	big_uint32_t	id;
+//  little_uint32_t size;
+    char8_t         data[];		//	data[size]
+} Chunk_t;
 
 
 //	Sample header chunks:
@@ -41,7 +36,7 @@ typedef struct HeaderChunk : ChunkID {
 
 //	RF64 Chunk:
 //		id = 'RF64'
-//		size = 0xFFFFFFFF meaning don't use this size member
+//		size = 0xFFFFFFFF   meaning don't use this size member
 //		type = 'WAVE'
 
 
@@ -65,13 +60,6 @@ typedef struct HeaderChunk : ChunkID {
 //		data = FormatExtensibleData
 
 
-//	RF64 Size Chunk: id = 'big1' (this chunk is a big one)
-//		size of data in Data Chunk
-typedef struct Size64Chunk : ChunkID {
-//	chunkID_t		id;
-    little_int64_t	size;
-} ChunkSize64_t;
-
 //	Format data structure.
 //	Chunk data with type 'fmt ' and size 16 will have this structure.
 typedef struct FormatData {
@@ -94,6 +82,24 @@ typedef struct FormatPlusData : FormatData {
     little_uint16_t cbSize;            // extra information (after cbSize) to store
 } FormatPlusData_t;
 
+// typedef struct _GUID {
+//   unsigned long  Data1;
+//   unsigned short Data2;
+//   unsigned short Data3;
+//   unsigned char  Data4[8];
+// } GUID;
+typedef struct _GUID {
+  little_uint32_t	Data1;
+  little_uint16_t	Data2;
+  little_uint16_t	Data3;
+  little_uint32_t	Data4;
+  little_uint32_t	Data5;
+} GUID_t;
+// // For a WAVE_FORMAT_X tag = 0xXYZW the WAVEFORMATEXTENSIBLE SubType GUID is
+// // 0000XYZW-0000-0010-8000-00AA00389B71
+// #define DEFINE_WAVEFORMATEX_GUID(x) (USHORT)(x), 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71
+// 
+
 //	Chunk data with type 'fmt ' and size 40 will have this structure.
 typedef struct FormatExtensibleData : FormatPlusData {
 //	little_uint16_t type;              // WAVE_FORMAT_PCM = 0x0001, etc.
@@ -109,7 +115,7 @@ typedef struct FormatExtensibleData : FormatPlusData {
         little_uint16_t wReserved;                 /* If neither applies, set to zero. */
     } Samples;
     little_uint32_t channelMask;
-    GUID subFormat;
+    GUID_t			subFormat;
 } FormatExtensibleData_t;
 
 //	Describes Broadcast Audio Extension data structure.
@@ -133,16 +139,23 @@ typedef struct BroadcastAudioExtension {
     char CodingHistory[0];   // ASCII : History coding
 } BroadcastAudioExt_t;
 
+//	RF64 Size Chunk: id = 'big1' (this chunk is a big one)
+//		size of data in Data Chunk
+typedef struct ChunkSize64 : ChunkID {
+//	chunkID_t		id;
+    little_int64_t	size;
+} ChunkSize64_t;
+
 //	Describes size of data in 'data' chunk.
 //		id = 'ds64'
 //		size >= 28
-typedef struct Size64Data {
+typedef struct DataSize64Chunk {
     little_int64_t riffSize;       // size of RF64 block
     little_int64_t dataSize;       // size of data chunk
     little_int64_t sampleCount;    // sample count of fact chunk
     little_int32_t tableLength;    // number of valid entries in array “table”
-    Size64Chunk table[];
-} Size64Data_t;
+    ChunkSize64_t  table[];
+} DataSize64_t;
 
 
 #endif /* DISKERROR_WAVE_H */

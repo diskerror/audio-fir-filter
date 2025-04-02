@@ -13,21 +13,21 @@
 #ifndef DISKERROR_WINDOWEDSINC_H
 #define DISKERROR_WINDOWEDSINC_H
 
+#include <valarray>
+
 using namespace std;
 
 //	Type should only be float, double, or long double.
 class WindowedSinc
 {
-	long double *H  = nullptr;    //  points to the list of coeficients, sizeof (H) = M
-	long double *Hc = nullptr;    //  points to the center of the list of coeficients
-	uint32_t    M   = 0;         //  number of coeficients
-
-	const long double twoPi = 2.0 * M_PI;
+	valarray<long double>	H;			//  points to the list of coeficients, sizeof (H) = M
+	uint32_t   				M   = 0;	//  number of coeficients
+	uint32_t				Mo2;		//	M / 2
 
 public:
 	WindowedSinc() = default;
 
-	WindowedSinc(double_t Fc, double_t transition) { SetSinc(Fc, transition); }
+	WindowedSinc(double Fc, double transition) { SetSinc(Fc, transition); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //  copy constructor
@@ -36,25 +36,26 @@ public:
 //		CopyH(s);
 //	}
 
-	~WindowedSinc() { delete H; }
+// 	~WindowedSinc() {}
 
 /////////////////////////////////////////////////////////////////////////////////////////
-	void SetSinc(double_t Fc, double_t transition);
+	void SetSinc(double Fc, double transition);
 
 	//  returns coeficient at index without range checking
 	inline long double GetCoeff(uint32_t i) { return H[i]; }
 
 	//	return pointer to array of coefficients
-	inline long double *Get_H() { return H; }
+// 	inline long double *Get_H() { return *H; }
 
-	//	returns size of H in count of coefficients
+	//	Returns count of coefficients
 	inline uint32_t Get_M() { return M; }
 
-	// Normalize then apply gain.
-	void NormalGain(long double gain = 1.0);
-
-	//  gain only, -1 inverts. "a" for alpha, the scalor
-	void Gain(long double a);
+	/**  Apply gain to H.
+	 * -1 inverts.
+	 * "a" for alpha, the scalor
+	 * does nothing for 1.0, or unity gain
+	 */
+	void Gain(double a);
 
 	//  Applies window to H.
 	void ApplyBlackman();
@@ -65,10 +66,10 @@ public:
 
 	//	For array operator, [0] points to the middle of the coefficients
 	//	i: -Mo2 <= i <= Mo2
-	inline long double operator[](int32_t i) { return *(Hc + i); }
+	inline long double operator[](int32_t i) { return H[i + Mo2]; }
 
 	//	IF unsigned int is used then index from the beginning.
-	inline long double operator[](uint32_t i) { return *(H + i); }
+	inline long double operator[](uint32_t i) { return H[i]; }
 
 //	inline WindowedSinc &operator+(WindowedSinc &s);
 //	inline WindowedSinc &operator-(WindowedSinc &s);//{ return ( *this + (-s) ); }
@@ -78,6 +79,9 @@ public:
 private:
 //  extra house keeping functions
 //	void CopyH(WindowedSinc &s);
+
+	// Normalize then apply gain.
+	void Normalize() { Gain(1.0 / H.sum()); }
 
 };
 
