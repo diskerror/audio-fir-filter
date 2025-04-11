@@ -7,7 +7,6 @@
 #pragma once
 
 #include <boost/endian.hpp>
-
 using namespace boost::endian;
 
 
@@ -16,17 +15,17 @@ struct ChunkID {
     big_uint32_t id;
 };
 
-typedef struct ChunkHead : ChunkID {
-//	big_uint32_t	id;
-    little_uint32_t size;
-} ChunkHead_t;
-
-typedef struct Chunk : ChunkHead {
-//	big_uint32_t	id;
-//  little_uint32_t size;
-    char8_t         data[];		//	data[size]
-} Chunk_t;
-
+//typedef struct ChunkHead : ChunkID {
+////	big_uint32_t	id;
+//    little_uint32_t size;
+//} ChunkHead_t;
+//
+//typedef struct Chunk : ChunkHead {
+////	big_uint32_t	id;
+////  little_uint32_t size;
+//    char8_t         data[];		//	data[size]
+//} Chunk_t;
+//
 
 //	Sample header chunks:
 //	RIFF Chunk:

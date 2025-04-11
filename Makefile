@@ -12,11 +12,17 @@ LIBS= -L/usr/local/lib -L/opt/local/libexec/boost/$(BV)/lib
 SRCS=$(wildcard *.cp)
 HDRS=$(wildcard *.h)
 
-.PHONY: all
+.PHONY: all run
 
 all: lowcut
 
 lowcut: $(SRCS) $(HDRS) makefile
 	$(CX) $(SRCS) -o $@
+	rm -rf ~/Desktop/test\ audio
 	cp -fr ~/ownCloud/test\ audio ~/Desktop
-	./$@ ~/Desktop/test\ audio/*.wav
+	./$@ ~/Desktop/test\ audio/*{.wav,.aif}
+
+run:
+	rm -rf ~/Desktop/test\ audio
+	cp -fr ~/ownCloud/test\ audio ~/Desktop
+	./lowcut ~/Desktop/test\ audio/*{.wav,.aif}

@@ -11,9 +11,7 @@
 #include <stdexcept>
 #include <string>
 #include <valarray>
-#include <boost/endian.hpp>
 
-using namespace boost::endian;
 using namespace std;
 
 #include "AudioFile.h"
@@ -35,10 +33,8 @@ inline float_t dither()
 
 int main(int argc, char **argv)
 {
-	auto    exitVal	= EXIT_SUCCESS;
-	valarray<float>	tempOutput(0);
+	auto            exitVal	= EXIT_SUCCESS;
 	uint_fast64_t	s = 0;	//	Index variable for samples.
-	float			maxVal = 0;
 
 	try {
 		//  Check for input parameter.
@@ -52,14 +48,14 @@ int main(int argc, char **argv)
 		//	A freq of 20Hz and slope of 20Hz means that 30Hz is 0dB and 10Hz is
 		//	approximately -80dB with ripple.
 		//	Ripple is only in the stop band using Blackman or Hamming windows.
-		const double freq  = TEMP_FREQ;    //	Fc = freq / sampleRate
-		const double slope = TEMP_SLOPE;    //	transition ~= slope / sampleRate
+		const float64_t freq  = TEMP_FREQ;    //	Fc = freq / sampleRate
+		const float64_t slope = TEMP_SLOPE;    //	transition ~= slope / sampleRate
 
 
 		//  Loop over file names.
 		for (uint32_t a = 1; a < argc; a++) {
 			//	open and read file
-			AudioFile audioFile(argv[a]);
+			auto audioFile = AudioFile::Make(argv[a]);
 			audioFile.ReadSamples();
 			
 			//	create sinc kernal
@@ -71,13 +67,14 @@ int main(int argc, char **argv)
 
 			//	define temporary output buffer[samps][chan],
 			//		before normalizing and reducing to original number of bits
-			tempOutput.resize(audioFile.GetNumSamples());
+			valarray<long double>	tempOutput(audioFile.GetNumSamples());
 			
 			uint32_t progressCount = 0;
-			float progress;
+			float32_t progress;
 			uint16_t progressPos;
 			
 			cout << fixed << setprecision(1) << flush;
+            cout << "Processing file: " << audioFile.file.string() << endl;
 
 			//	for each channel in frame
 			for (uint16_t chan = 0; chan < audioFile.GetNumChannels(); chan++) {
@@ -96,12 +93,12 @@ int main(int argc, char **argv)
 					}
 					
 					//	tempOutput[s][chan] = acc
-					tempOutput[s] = (float) acc;
+					tempOutput[s] = (float32_t) acc;
 
 					//	progress bar, do only every x samples
-					if (progressCount % 4181 == 0) {
-						progress	= (float) progressCount / (float_t) audioFile.GetNumSamples();
-						progressPos	= (uint16_t) round((float_t) PROGRESS_WIDTH * progress);
+					if (progressCount % 7919 == 0) {
+						progress	= (float32_t) progressCount / (float32_t) audioFile.GetNumSamples();
+						progressPos	= (uint16_t) round((float32_t) PROGRESS_WIDTH * progress);
 
 						cout << "\r" << "["
 						     << string(progressPos, '=') << ">" << string(PROGRESS_WIDTH - progressPos, ' ')
@@ -115,26 +112,24 @@ int main(int argc, char **argv)
 			std::cout.flush();
 
 
-			//	Apply adjustment and dither. Don't apply to floats (4 byte samples).
-			if ( audioFile.GetBytesPerSample() != 4 ) {
+			//	Only apply adjustment and dither to PCM data.
+			if ( audioFile.GetDataEncoding() == 'PCM ' ) {
 				//	Normalize.
-				maxVal = fmaxf(fabsf(tempOutput.max()), fabsf(tempOutput.min()));
+				float32_t maxVal = fmaxf(abs(tempOutput.max()), abs(tempOutput.min()));
 				
 				//	Maximum stored == 2^(nBits-1) - 1
-				//	Used as floats because they are used in floating point division.
 				//	multiply adjustment on every member of tempOutput
-				switch (audioFile.GetBytesPerSample()) {
-					case 1:
+				switch (audioFile.GetBitsPerSample()) {
+					case 8:
 						tempOutput *= (127.0 / maxVal);
 					break;
 					
-					case 2:
+					case 16:
 						tempOutput *= (32767.0 / maxVal);
 					break;
 					
-					case 3:
+					case 24:
 						tempOutput *= (8388607.0 / maxVal);
-// 						tempOutput *= (2147483647.0 / maxVal);	//	???????
 					break;
 				}
 				
