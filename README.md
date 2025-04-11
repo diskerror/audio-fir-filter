@@ -6,6 +6,8 @@ Of course it needs option handling for things like cutoff frequency, slope, high
 
 If you are not familiar with FIR filters, this algorithm can seem quite slow, particularly with a steep slope (narrow transition band). It's faster than real-time with current hardware—Mac Studio with M2 chip—even being single threaded. The largest native floating point type, long double, is used to keep the filter stable at the extreme settings as well as accuracy. A 20Hz slope works quite well. Narrower slopes have not been tested... yet. It's primary usage is to remove DC offset and very low frequency garbage from very old digital audio recordings.
 
+This project also includes Microsoft and Apple headers, WAVE and AIFF, with an extra 'h' at the end to fool the make file as they are only used for reference.
+
 ## Cross Platform
 The Wave.h header file uses the Boost endianess file so it is anticipated that this program can be compiled on platforms with different endianess and maintain the proper WAVE and AIFF byte order.
 
