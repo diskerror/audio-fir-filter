@@ -22,6 +22,10 @@ using namespace std;
 #define TEMP_SLOPE	20
 #define PROGRESS_WIDTH 70.0
 
+#define MAX_8_BIT      127.0
+#define MAX_16_BIT   32767.0
+#define MAX_24_BIT 8388607.0
+
 inline float_t dither()
 {
 	static random_device                      rd;
@@ -33,13 +37,13 @@ inline float_t dither()
 
 int main(int argc, char **argv)
 {
-	auto            exitVal	= EXIT_SUCCESS;
-	uint_fast64_t	s = 0;	//	Index variable for samples.
+	auto          exitVal = EXIT_SUCCESS;
+	uint_fast64_t s = 0;	//	Index variable for samples.
 
 	try {
 		//  Check for input parameter.
 		if (argc < 2) {
-			println("Applies high-pass FIR filter to WAV file with cutoff at 20Hz.");
+			println("Applies high-pass FIR filter to WAVE or AIFF file with cutoff at 20Hz.");
 			return exitVal;
 		}
 
@@ -114,26 +118,34 @@ int main(int argc, char **argv)
 
 			//	Only apply adjustment and dither to PCM data.
 			if ( audioFile.GetDataEncoding() == 'PCM ' ) {
-				//	Normalize.
+				//	Normalize if new sample stream goes over maximum sample size.
+				//  A DC offset in one direction may cause overflow in the other direction when removed.
 				float32_t maxVal = fmaxf(abs(tempOutput.max()), abs(tempOutput.min()));
 				
 				//	Maximum stored == 2^(nBits-1) - 1
 				//	multiply adjustment on every member of tempOutput
 				switch (audioFile.GetBitsPerSample()) {
 					case 8:
-						tempOutput *= (127.0 / maxVal);
+					    if (maxVal > MAX_8_BIT) {
+    					    tempOutput *= (MAX_8_BIT / maxVal);
+					    }
 					break;
 					
 					case 16:
-						tempOutput *= (32767.0 / maxVal);
+					    if (maxVal > MAX_16_BIT) {
+    					    tempOutput *= (MAX_16_BIT / maxVal);
+					    }
 					break;
 					
 					case 24:
-						tempOutput *= (8388607.0 / maxVal);
+					    if (maxVal > MAX_24_BIT) {
+    					    tempOutput *= (MAX_24_BIT / maxVal);
+					    }
 					break;
 				}
 				
-				//	add different dither value to each tempOutput value
+				//  We can't simply use "tempOutput += dither();", without the loop,
+                //  because we need dither() to return a different value for each sample.
 				for (s = 0; s < audioFile.GetNumSamples(); s++) {
 					tempOutput[s] += dither();
 				}
