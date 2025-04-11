@@ -18,8 +18,8 @@ using namespace std;
 #include "WindowedSinc.h"
 
 //	These values will be changeable programatically at some point.
-#define TEMP_FREQ	1000
-#define TEMP_SLOPE	100
+#define TEMP_FREQ	20
+#define TEMP_SLOPE	20
 #define PROGRESS_WIDTH 70.0
 
 inline float_t dither()
