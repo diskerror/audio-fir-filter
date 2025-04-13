@@ -42,7 +42,7 @@ typedef struct {
 } mediaHeader_t;
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 AudioFile::AudioFile(const filesystem::path fPath): file(fPath) {
 	mediaHeader_t header;
 	header.baseID  = 0;
@@ -95,7 +95,7 @@ AudioFile::AudioFile(const filesystem::path fPath): file(fPath) {
 	}
 }
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void AudioFile::openRIFF()
 {
 	FormatData_t format;
@@ -153,7 +153,7 @@ void AudioFile::openRIFF()
 	
 }
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void AudioFile::openRF64()
 {
 	FormatData_t format;
@@ -224,7 +224,7 @@ void AudioFile::openRF64()
 	this->numSamples        = this->dataBlockSize / (this->bitsPerSample / 8);
 }
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void AudioFile::openAIFF()
 {
 	commChunk_t format;
@@ -271,7 +271,7 @@ void AudioFile::openAIFF()
 	this->dataEncoding  = 'PCM ';
 }
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void AudioFile::openAIFC()
 {
 	commExtChunk_t format;
@@ -340,7 +340,7 @@ void AudioFile::openAIFC()
 	this->dataType = format.compressionType;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 unsigned char* AudioFile::ReadRawData()
 {
 	auto data = (unsigned char*) calloc(this->dataBlockSize + 8, 1);
@@ -387,6 +387,8 @@ void AudioFile::assertDataFormat() {
 	}
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
  * ReadSamples
@@ -487,6 +489,7 @@ void AudioFile::ReadSamples()
 	delete dataBlock;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 //	Assumes data will be the same size as the buffer that was read.
 void AudioFile::WriteSamples()
 {

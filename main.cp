@@ -38,7 +38,6 @@ inline float_t dither()
 int main(int argc, char **argv)
 {
 	auto          exitVal = EXIT_SUCCESS;
-	uint_fast64_t s = 0;	//	Index variable for samples.
 
 	try {
 		//  Check for input parameter.
@@ -55,6 +54,9 @@ int main(int argc, char **argv)
 		const float64_t freq  = TEMP_FREQ;    //	Fc = freq / sampleRate
 		const float64_t slope = TEMP_SLOPE;    //	transition ~= slope / sampleRate
 
+        uint16_t      chan = 0; //	Index variable for channels.
+	    uint_fast64_t s    = 0; //	Index variable for samples.
+        int_fast32_t  m    = 0; //	Index variable for coefficients.
 
 		//  Loop over file names.
 		for (uint32_t a = 1; a < argc; a++) {
@@ -81,15 +83,15 @@ int main(int argc, char **argv)
             cout << "Processing file: " << audioFile.file.string() << endl;
 
 			//	for each channel in frame
-			for (uint16_t chan = 0; chan < audioFile.GetNumChannels(); chan++) {
+			for (chan = 0; chan < audioFile.GetNumChannels(); chan++) {
 				//	for each input sample in channel
 				for (s = chan; s < audioFile.GetNumSamples(); s += audioFile.GetNumChannels()) {
 					//	Accumulator. Initialized to zero for each time through loop.
 					long double acc = 0.0;
 
 					//	for each sinc member
-					for (int32_t m = -Mo2; m <= Mo2; m++) {
-						uint_fast64_t	smc = s + m * audioFile.GetNumChannels();
+					for (m = -Mo2; m <= Mo2; m++) {
+						uint_fast64_t smc = s + m * audioFile.GetNumChannels();
 
 						if (smc < 0 || smc >= audioFile.GetNumSamples()) { continue; }
 
@@ -121,7 +123,7 @@ int main(int argc, char **argv)
 				//	Normalize if new sample stream goes over maximum sample size.
 				//  A DC offset in one direction may cause overflow in the other direction when removed.
 				float32_t maxVal = fmaxf(abs(tempOutput.max()), abs(tempOutput.min()));
-				
+
 				//	Maximum stored == 2^(nBits-1) - 1
 				//	multiply adjustment on every member of tempOutput
 				switch (audioFile.GetBitsPerSample()) {
@@ -130,20 +132,20 @@ int main(int argc, char **argv)
     					    tempOutput *= (MAX_8_BIT / maxVal);
 					    }
 					break;
-					
+
 					case 16:
 					    if (maxVal > MAX_16_BIT) {
     					    tempOutput *= (MAX_16_BIT / maxVal);
 					    }
 					break;
-					
+
 					case 24:
 					    if (maxVal > MAX_24_BIT) {
     					    tempOutput *= (MAX_24_BIT / maxVal);
 					    }
 					break;
 				}
-				
+
 				//  We can't simply use "tempOutput += dither();", without the loop,
                 //  because we need dither() to return a different value for each sample.
 				for (s = 0; s < audioFile.GetNumSamples(); s++) {

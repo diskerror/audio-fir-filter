@@ -27,16 +27,16 @@ long double bigExt80ToNativeLongDouble(const char * data)
 
     big_ext80_struct_t* parts = (big_ext80_struct_t *) data;
 
-    const big_int16_t big_7FFF_mask = 0x7FFF;
-    const big_int64_t big_7FFF_64_mask = 0x7FFFFFFFFFFFFFFF;
+    const big_int16_t big_7F_16_mask = 0x7FFF;
+    const big_int64_t big_7F_64_mask = 0x7FFFFFFFFFFFFFFF;
 
     const long double  sign     = *data & 0x80 ? -1.0 : 1.0;
-    const int16_t      exponent = parts->sign_exponent & big_7FFF_mask;
+    const int16_t      exponent = parts->sign_exponent & big_7F_16_mask;
     
     //  unusual number, infinity or NaN,
-    if (exponent == big_7FFF_mask) {
+    if (exponent == big_7F_16_mask) {
         //  infinity, check all 64 bits
-        if((parts->mantissa & big_7FFF_64_mask) == 0) {
+        if((parts->mantissa & big_7F_64_mask) == 0) {
             return (sign < 0) ?
                 -numeric_limits<long double>::infinity() :
                 numeric_limits<long double>::infinity();
@@ -50,7 +50,7 @@ long double bigExt80ToNativeLongDouble(const char * data)
     
     // 1 bit sign, 15 bit exponent, 64 bit mantissa
     // value = (-1) ^ s * (normalizeBit + m / 2 ^ 63) * 2 ^ (e - 16383)
-    return sign * (long double) parts->mantissa * powl(2.0, ((long double) exponent - 16383.0)-63.0);
+    return sign * (long double) parts->mantissa * powl(2.0L, ((long double) exponent - 16383.0L)-63.0L);
 }
 
 

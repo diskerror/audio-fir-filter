@@ -55,9 +55,11 @@ class AudioFile
 
 public:
     // Constructor
+    //  Requires a valid filesystem path object.
 	AudioFile(const filesystem::path);
 
     // Factory methods
+    //  Requires a valid file name.
 	static AudioFile Make(string sPath) { return AudioFile(filesystem::path(sPath)); };
 	static AudioFile Make(char* cPath)  { return AudioFile(filesystem::path(cPath)); };
 
@@ -66,7 +68,7 @@ public:
 
     // Exposing these members because of their useful methods.
 	const filesystem::path file;
-	vector<float32_t>          samples;
+	vector<float32_t>      samples;
 
 	inline big_uint32_t	GetDataEncoding()  { return this->dataEncoding; };
 	inline big_uint32_t	GetDataEndianess() { return this->dataEndianess; };

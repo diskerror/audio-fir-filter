@@ -3,7 +3,7 @@
 CP = clang++ -std=c++23
 
 #	Boost version
-BV = 1.81
+BV = 1.87
 
 CX = $(CP) -Wall -Winvalid-pch -Wno-macro-redefined -O3 -I/opt/local/libexec/boost/$(BV)/include
 
@@ -18,11 +18,11 @@ all: lowcut
 
 lowcut: $(SRCS) $(HDRS) makefile
 	$(CX) $(SRCS) -o $@
-	rm -rf ~/Desktop/test\ audio
-	cp -fr ~/ownCloud/test\ audio ~/Desktop
-	./$@ ~/Desktop/test\ audio/*{.wav,.aif}
+#	rm -rf ~/Desktop/test\ audio
+#	cp -fr ~/ownCloud/test\ audio ~/Desktop
+#	./$@ ~/Desktop/test\ audio/*{.wav,.aif}
 
-run:
+test:
 	rm -rf ~/Desktop/test\ audio
 	cp -fr ~/ownCloud/test\ audio ~/Desktop
 	./lowcut ~/Desktop/test\ audio/*{.wav,.aif}
