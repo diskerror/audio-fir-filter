@@ -13,6 +13,8 @@
 #include <string>
 #include <sys/stat.h>
 
+namespace Diskerror {
+
 //  Utility function to convert a 32-bit integer to a string of 4 characters.
 string bigInt2str(big_uint32_t fc)
 {
@@ -576,3 +578,5 @@ void AudioFile::WriteSamples()
 	WriteRawData(dataBlock);
 	if (dataBlock != (unsigned char*) samples.data()) delete dataBlock;
 }
+
+} //  namespace Diskerror

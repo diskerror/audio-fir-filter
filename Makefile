@@ -5,14 +5,14 @@ CP = clang++ -std=c++23
 #	Boost version
 BV = 1.87
 
-CX = $(CP) -Wall -Winvalid-pch -Wno-macro-redefined -O3 -I/opt/local/libexec/boost/$(BV)/include
+CX = $(CP) -Wall -Winvalid-pch -Wno-macro-redefined -O3 -I/opt/local/libexec/boost/$(BV)/include -I/usr/local/include
 
-LIBS= -L/usr/local/lib -L/opt/local/libexec/boost/$(BV)/lib
+LIBS= -L/usr/local/lib -L/opt/local/lib -L/opt/local/libexec/boost/$(BV)/lib -lboost_program_options
 
 SRCS=$(wildcard *.cp)
 HDRS=$(wildcard *.h)
 
-.PHONY: all run
+.PHONY: all
 
 all: lowcut
 

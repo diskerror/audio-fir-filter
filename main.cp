@@ -11,14 +11,17 @@
 #include <stdexcept>
 #include <string>
 #include <valarray>
+#include <boost/program_options.hpp>
 
 using namespace std;
+using namespace boost;
+namespace po = boost::program_options;
 
 #include "AudioFile.h"
 #include "WindowedSinc.h"
 
 //	These values will be changeable programatically at some point.
-#define TEMP_FREQ	20
+#define TEMP_FREQ	300
 #define TEMP_SLOPE	20
 #define PROGRESS_WIDTH 70.0
 
@@ -37,12 +40,28 @@ inline float_t dither()
 
 int main(int argc, char **argv)
 {
-	auto          exitVal = EXIT_SUCCESS;
+	auto exitVal = EXIT_SUCCESS;
+
+//    po::options_description optDesc("Options:");
+//	optDesc.add_options()
+//    	("freq,f", "Cut-off frequency of the filter. For FIR filters this is the -6dB point.")
+//    	("slope,s", "Slope width of the cut-off transision.")
+//    	("normalize,n", "Normalize PCM files to maximum allowed value for bit depth.")
+//    	("help,h", "Applies low-cut (high-pass) FIR filter to WAVE or AIFF file.")
+//    ;
+
+//	po::positional_options_description optFiles;
+//	optFiles.add("in", -1);
+//
+//	po::variables_map inputValues;
+//	po::store(po::command_line_parser(argc, argv).options(optDesc).positional(optFiles).run(), inputValues);
+//	po::notify(inputValues);
+//	throw;
 
 	try {
 		//  Check for input parameter.
 		if (argc < 2) {
-			println("Applies high-pass FIR filter to WAVE or AIFF file with cutoff at 20Hz.");
+			cout << "Applies low-cut (high-pass) FIR filter to WAVE or AIFF file with cutoff at 20Hz." << endl;
 			return exitVal;
 		}
 
@@ -61,11 +80,11 @@ int main(int argc, char **argv)
 		//  Loop over file names.
 		for (uint32_t a = 1; a < argc; a++) {
 			//	open and read file
-			auto audioFile = AudioFile::Make(argv[a]);
+			auto audioFile = Diskerror::AudioFile::Make(argv[a]);
 			audioFile.ReadSamples();
 			
 			//	create sinc kernal
-			WindowedSinc sinc((freq / audioFile.GetSampleRate()), (slope / audioFile.GetSampleRate()));
+			Diskerror::WindowedSinc sinc((freq / audioFile.GetSampleRate()), (slope / audioFile.GetSampleRate()));
 			sinc.ApplyBlackman();
 			sinc.MakeIntoHighPass();
 
@@ -163,15 +182,10 @@ int main(int argc, char **argv)
 
 		} //  End loop over file names.
 	} // End try
-	catch (exception &e) {
-		cerr << e.what() << endl;
+	catch (...) {
 		exitVal = EXIT_FAILURE;
 	}
-	catch (exception *e) {
-		cerr << e->what() << endl;
-		exitVal = EXIT_FAILURE;
-	}
-	
+
 	return exitVal;
 
 } // End main

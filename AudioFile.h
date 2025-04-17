@@ -14,6 +14,8 @@
 #include <boost/limits.hpp>
 #include <boost/math/cstdfloat/cstdfloat_types.hpp>
 
+namespace Diskerror {
+
 using namespace std;
 using namespace boost;
 using namespace boost::endian;
@@ -87,5 +89,7 @@ public:
 	
 	inline float& operator[] (uint64_t s) { return samples[s]; }
 };
+
+} // namespace Diskerror
 
 #endif // DISKERROR_AUDIOFILE_H

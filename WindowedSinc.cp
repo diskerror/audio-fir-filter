@@ -15,6 +15,8 @@
 
 #include "WindowedSinc.h"
 
+namespace Diskerror {
+
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -94,3 +96,5 @@ void WindowedSinc::MakeIntoHighPass()
 	Gain(-1.0);
 	H[Mo2] += 1.0;
 }
+
+} //  namespace Diskerror
