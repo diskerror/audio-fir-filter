@@ -2,9 +2,7 @@
 
 This is a workspace for—initially—building a low-cut FIR filter for audio files. It currently writes over the input file preserving all meta data. Audio data is read and written using the same format as the input file.
 
-Of course it needs option handling for things like cutoff frequency, slope, high or low pass filtering, and writing to a new file. It may also include the writing of new meta data from a configuration file, like creator, title, comments, etc.
-
-If you are not familiar with FIR filters, this algorithm can seem quite slow, particularly with a steep slope (narrow transition band). It's faster than real-time with current hardware—Mac Studio with M2 chip—even being single threaded. The largest native floating point type, long double, is used to keep the filter stable at the extreme settings as well as accuracy. A 20Hz slope works quite well. Narrower slopes have not been tested... yet. It's primary usage is to remove DC offset and very low frequency garbage from very old digital audio recordings.
+If you are not familiar with FIR filters, this algorithm can seem quite slow, particularly with a steep slope (narrow transition band). It's faster than real-time with current hardware—Mac Studio with M2 chip—even being single threaded. The largest native floating point type, long double, is used to keep the filter stable at the extreme settings as well as accuracy. It's primary usage is to remove DC offset and very low frequency garbage from very old digital audio recordings.
 
 This project also includes Microsoft and Apple headers, WAVE and AIFF, with an extra 'h' at the end to fool the make file as they are only used for reference.
 
