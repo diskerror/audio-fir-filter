@@ -6,6 +6,7 @@
 #define DISKERROR_AUDIOFILE_H
 
 
+#include <cfloat>
 #include <filesystem>
 #include <fstream>
 #include <vector>
@@ -34,6 +35,10 @@ class AudioFile
 	big_uint32_t fileSubType   = 0x00000000; // WAVE, WAVE, AIFF, AIFC
 	big_uint32_t dataEncoding  = 0x00000000; // 'PCM ' integer, 'IEEE' float
 	big_uint32_t dataEndianess = 0x00000000; // 'big ' or 'litl'
+
+	const uint32_t MAX_VALUE_8_BIT  = 127.0;
+	const uint32_t MAX_VALUE_16_BIT = 32767.0;
+	const uint32_t MAX_VALUE_24_BIT = 8388607.0;
 
     big_uint32_t dataType   = 0x00000000;
 	uint16_t numChannels    = 0;

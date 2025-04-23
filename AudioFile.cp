@@ -15,6 +15,10 @@
 
 namespace Diskerror {
 
+using namespace std;
+using namespace boost;
+using namespace boost::endian;
+
 //  Utility function to convert a 32-bit integer to a string of 4 characters.
 string bigInt2str(big_uint32_t fc)
 {

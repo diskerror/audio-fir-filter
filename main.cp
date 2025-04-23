@@ -6,24 +6,26 @@
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
+#include <getopt.h>
 #include <iostream>
 #include <random>
+#include <set>
 #include <stdexcept>
 #include <string>
+#include <unistd.h>
 #include <valarray>
-#include <boost/program_options.hpp>
+#include <boost/math/cstdfloat/cstdfloat_types.hpp>
 
 using namespace std;
 using namespace boost;
-namespace po = boost::program_options;
 
 #include "AudioFile.h"
 #include "WindowedSinc.h"
 
 //	These values will be changeable programatically at some point.
-#define TEMP_FREQ	300
+#define TEMP_FREQ	20
 #define TEMP_SLOPE	20
-#define PROGRESS_WIDTH 70.0
+#define PROGRESS_WIDTH 80.0
 
 #define MAX_8_BIT      127.0
 #define MAX_16_BIT   32767.0
@@ -42,48 +44,85 @@ int main(int argc, char **argv)
 {
 	auto exitVal = EXIT_SUCCESS;
 
-//    po::options_description optDesc("Options:");
-//	optDesc.add_options()
-//    	("freq,f", "Cut-off frequency of the filter. For FIR filters this is the -6dB point.")
-//    	("slope,s", "Slope width of the cut-off transision.")
-//    	("normalize,n", "Normalize PCM files to maximum allowed value for bit depth.")
-//    	("help,h", "Applies low-cut (high-pass) FIR filter to WAVE or AIFF file.")
-//    ;
-
-//	po::positional_options_description optFiles;
-//	optFiles.add("in", -1);
-//
-//	po::variables_map inputValues;
-//	po::store(po::command_line_parser(argc, argv).options(optDesc).positional(optFiles).run(), inputValues);
-//	po::notify(inputValues);
-//	throw;
-
 	try {
-		//  Check for input parameter.
-		if (argc < 2) {
-			cout << "Applies low-cut (high-pass) FIR filter to WAVE or AIFF file with cutoff at 20Hz." << endl;
-			return exitVal;
-		}
-
-		//	THESE WILL BE PULLED FROM OPTIONS IN THE FUTURE.
+		int opt;
+		struct option long_options[] = {
+			{"help", no_argument, nullptr, 'h'},
+			{"frequency", required_argument, nullptr, 'f'},
+			{"slope", required_argument, nullptr, 's'},
+			{"normalize", no_argument, nullptr, 'n'},
+			{nullptr, 0, nullptr, 0}
+		};
+	
+		bool help      = false;
+		bool normalize = false;
+	
 		//	freq == cutoff frequency. The response is -6dB at this frequency.
 		//	A freq of 20Hz and slope of 20Hz means that 30Hz is 0dB and 10Hz is
 		//	approximately -80dB with ripple.
 		//	Ripple is only in the stop band using Blackman or Hamming windows.
-		const float64_t freq  = TEMP_FREQ;    //	Fc = freq / sampleRate
-		const float64_t slope = TEMP_SLOPE;    //	transition ~= slope / sampleRate
+		float64_t freq  = TEMP_FREQ;    //	Fc = freq / sampleRate
+		float64_t slope = TEMP_SLOPE;   //	transition ~= slope / sampleRate
+
+        bool continue_loop = true;
+		while (continue_loop) {
+			int option_index = 0;
+			opt = getopt_long(argc, argv, "hf:s:n", long_options, &option_index);
+	
+			switch (opt) {
+				case 'h':
+					help = true;
+					break;
+	
+				case 'f':
+					freq = atof(optarg);
+					break;
+	
+				case 's':
+					slope = atof(optarg);
+					break;
+	
+				case 'n':
+					normalize = true;
+					break;
+	
+				case ':':
+					cerr << "option needs a value" << endl;  
+					break;
+				
+				case '?':
+					if (optopt == 'f' || optopt == 's')
+						throw runtime_error("Argument missing.");
+
+					throw runtime_error("Unknown option.");
+
+				case -1:
+				default:
+					continue_loop = false;
+			}
+		}
+
+		//  Check for input parameter.
+		if (optind >= argc || help == true) {
+			cout << "Applies low-cut (high-pass) FIR filter to WAVE or AIFF file." << endl;
+			cout << "    -f, --frequency <Hz>         Filter cutoff frequency." << endl;
+            cout << "    -s, --slope <Hz>             Filter slope." << endl;
+            cout << "    -n, --normalize              Normalize output to maximum bit depth for PCM files." << endl;
+            cout << "    -h, --help                   Display this help message." << endl;
+			return exitVal;
+		}
 
         uint16_t      chan = 0; //	Index variable for channels.
 	    uint_fast64_t s    = 0; //	Index variable for samples.
         int_fast32_t  m    = 0; //	Index variable for coefficients.
 
 		//  Loop over file names.
-		for (uint32_t a = 1; a < argc; a++) {
+		for (uint32_t a = optind; a < argc; a++) {
 			//	open and read file
 			auto audioFile = Diskerror::AudioFile::Make(argv[a]);
 			audioFile.ReadSamples();
 			
-			//	create sinc kernal
+			//	create windowed sinc kernal
 			Diskerror::WindowedSinc sinc((freq / audioFile.GetSampleRate()), (slope / audioFile.GetSampleRate()));
 			sinc.ApplyBlackman();
 			sinc.MakeIntoHighPass();
@@ -91,12 +130,11 @@ int main(int argc, char **argv)
 			auto Mo2 = (int32_t) sinc.Get_M() / 2;
 
 			//	define temporary output buffer[samps][chan],
-			//		before normalizing and reducing to original number of bits
 			valarray<long double>	tempOutput(audioFile.GetNumSamples());
 			
-			uint32_t progressCount = 0;
+			uint32_t  progressCount = 0;
 			float32_t progress;
-			uint16_t progressPos;
+			uint16_t  progressPos;
 			
 			cout << fixed << setprecision(1) << flush;
             cout << "Processing file: " << audioFile.file.string() << endl;
@@ -145,24 +183,26 @@ int main(int argc, char **argv)
 
 				//	Maximum stored == 2^(nBits-1) - 1
 				//	multiply adjustment on every member of tempOutput
+				size_t max_possible = 0;
 				switch (audioFile.GetBitsPerSample()) {
 					case 8:
-					    if (maxVal > MAX_8_BIT) {
-    					    tempOutput *= (MAX_8_BIT / maxVal);
-					    }
+					max_possible = MAX_8_BIT;
 					break;
 
 					case 16:
-					    if (maxVal > MAX_16_BIT) {
-    					    tempOutput *= (MAX_16_BIT / maxVal);
-					    }
+					max_possible = MAX_16_BIT;
 					break;
 
 					case 24:
-					    if (maxVal > MAX_24_BIT) {
-    					    tempOutput *= (MAX_24_BIT / maxVal);
-					    }
+					max_possible = MAX_24_BIT;
 					break;
+					
+					default:
+					runtime_error("Can't handle PCM files with this bit depth."); 
+				}
+
+				if (maxVal > max_possible || normalize) {
+					tempOutput *= (max_possible / maxVal);
 				}
 
 				//  We can't simply use "tempOutput += dither();", without the loop,

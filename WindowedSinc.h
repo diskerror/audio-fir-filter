@@ -19,6 +19,7 @@ namespace Diskerror {
 
 using namespace std;
 
+
 //	Type should only be float, double, or long double.
 class WindowedSinc
 {
