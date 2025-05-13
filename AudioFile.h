@@ -26,11 +26,10 @@ using namespace boost::endian;
  *	Open, read, and write existing audio files.
  *	The file size and type cannot be changed.
  */
-class AudioFile 
-{
-	fstream   fileStm;
+class AudioFile {
+	fstream fileStm;
 
-    // These properties are used as four character codes.
+	// These properties are used as four character codes.
 	big_uint32_t fileType      = 0x00000000; // RIFF, RF64, FORM, FORM
 	big_uint32_t fileSubType   = 0x00000000; // WAVE, WAVE, AIFF, AIFC
 	big_uint32_t dataEncoding  = 0x00000000; // 'PCM ' integer, 'IEEE' float
@@ -40,59 +39,67 @@ class AudioFile
 	const uint32_t MAX_VALUE_16_BIT = 32767.0;
 	const uint32_t MAX_VALUE_24_BIT = 8388607.0;
 
-    big_uint32_t dataType   = 0x00000000;
-	uint16_t numChannels    = 0;
-	uint32_t sampleRate	    = 0;
-	uint16_t bitsPerSample  = 0;
-	uint64_t numSamples     = 0;
-	uint64_t dataBlockStart = 0;
-	uint64_t dataBlockSize  = 0;
+	big_uint32_t dataType       = 0x00000000;
+	uint16_t     numChannels    = 0;
+	uint32_t     sampleRate     = 0;
+	uint16_t     bitsPerSample  = 0;
+	uint64_t     numSamples     = 0;
+	uint64_t     dataBlockStart = 0;
+	uint64_t     dataBlockSize  = 0;
 
-	void	openFile();
+	void openFile();
 
-	void	openRIFF();	//	RIFF/WAVE < 4G
-	void	openRF64();	//	RF64/WAVE > 4G
-	void	openAIFF();	//	FORM/AIFF < 4G
-	void	openAIFC();	//	FORM/AIFC   ?
+	void openRIFF();    //	RIFF/WAVE < 4G
+	void openRF64();    //	RF64/WAVE > 4G
+	void openAIFF();    //	FORM/AIFF < 4G
+	void openAIFC();    //	FORM/AIFC   ?
 
 //    void    ReverseCopyBytes( unsigned char * , unsigned char * , uint64_t );
-    static void ReverseCopy4Bytes( unsigned char * , unsigned char * );
+	static void ReverseCopy4Bytes(unsigned char *, unsigned char *);
 
-    void assertDataFormat();
+	void assertDataFormat();
 
 public:
-    // Constructor
-    //  Requires a valid filesystem path object.
+	// Constructor
+	//  Requires a valid filesystem path object.
 	AudioFile(const filesystem::path);
 
-    // Factory methods
-    //  Requires a valid file name.
+	// Factory methods
+	//  Requires a valid file name.
 	static AudioFile Make(string sPath) { return AudioFile(filesystem::path(sPath)); };
-	static AudioFile Make(char* cPath)  { return AudioFile(filesystem::path(cPath)); };
 
-    // Destructor
-	~AudioFile() { };
+	static AudioFile Make(char *cPath) { return AudioFile(filesystem::path(cPath)); };
 
-    // Exposing these members because of their useful methods.
+	// Destructor
+	~AudioFile() {};
+
+	// Exposing these members because of their useful methods.
 	const filesystem::path file;
-	vector<float32_t>      samples;
+	vector <float32_t>     samples;
 
-	inline big_uint32_t	GetDataEncoding()  { return this->dataEncoding; };
-	inline big_uint32_t	GetDataEndianess() { return this->dataEndianess; };
+	inline big_uint32_t GetDataEncoding() { return this->dataEncoding; };
 
-	inline uint16_t	GetNumChannels()   { return this->numChannels; };
-	inline uint32_t	GetSampleRate()    { return this->sampleRate; };
-	inline uint16_t	GetBitsPerSample() { return this->bitsPerSample; };
-	inline uint64_t	GetNumSamples()    { return this->numSamples; };
-	inline uint64_t	GetDataBlockSize() { return this->dataBlockSize; };
+	inline big_uint32_t GetDataEndianess() { return this->dataEndianess; };
 
-	unsigned char* ReadRawData();
-	void           WriteRawData(unsigned char*);
+	inline uint16_t GetNumChannels() { return this->numChannels; };
+
+	inline uint32_t GetSampleRate() { return this->sampleRate; };
+
+	inline uint16_t GetBitsPerSample() { return this->bitsPerSample; };
+
+	inline uint64_t GetNumSamples() { return this->numSamples; };
+
+	inline uint64_t GetDataBlockSize() { return this->dataBlockSize; };
+
+	unsigned char *ReadRawData();
+
+	void WriteRawData(unsigned char *);
 
 	void ReadSamples();
+
 	void WriteSamples();
-	
-	inline float& operator[] (uint64_t s) { return samples[s]; }
+
+	inline float &operator[](uint64_t s) { return samples[s]; }
 };
 
 } // namespace Diskerror

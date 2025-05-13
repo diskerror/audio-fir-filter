@@ -19,7 +19,7 @@ namespace Diskerror {
 
 using namespace std;
 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 //  Cutoff frequency Fc in fraction of sample rate;
 //  Transition width M in fraction of sample rate, rounded up to the next odd integer;
 //	sinc = sin(2.0 * M_PI * Fc * (i - M / 2)) / (i - M / 2)
@@ -32,15 +32,15 @@ void WindowedSinc::SetSinc(double Fc, double transition)
 
 	M = (uint32_t) round(4.0 / transition);
 	//	If M is not even then add 1
-	if (M % 2 != 0) { M++; }
+	if ( M % 2 != 0 ) { M++; }
 	Mo2 = M / 2;
 
 	H.resize(M);
-	H *= 0;	//	clear
+	H *= 0;    //	clear
 
 	int32_t i, imMo2;
 
-	for (i = 0; i < Mo2; i++) {
+	for ( i = 0; i < Mo2; i++ ) {
 		imMo2 = i - Mo2;
 		H[i] = sin(natFc * imMo2) / imMo2;
 	}
@@ -48,7 +48,7 @@ void WindowedSinc::SetSinc(double Fc, double transition)
 	//	Account for divide by zero when i == Mo2
 	H[i++] = natFc;
 
-	for (; i <= M; i++) {
+	for ( ; i <= M; i++ ) {
 		imMo2 = i - Mo2;
 		H[i] = sin(natFc * imMo2) / imMo2;
 	}
@@ -61,7 +61,7 @@ void WindowedSinc::SetSinc(double Fc, double transition)
 //  gain only, -1 inverts. "a" for alpha, the scalor
 void WindowedSinc::Gain(double a)
 {
-	if (a != 1.0) {  //  if not unity gain
+	if ( a != 1.0 ) {  //  if not unity gain
 		H *= a;
 	}
 }
@@ -69,12 +69,12 @@ void WindowedSinc::Gain(double a)
 //  Applies window to H.
 void WindowedSinc::ApplyBlackman()
 {
-	long double twoPi	= 2.0 * M_PI;
+	long double twoPi = 2.0 * M_PI;
 	long double twoPiIoM;
 
-	for (uint32_t i = 0; i <= M; i++) {
-		twoPiIoM = twoPi * (i + 1) / (M + 2);
-		H[i] *= (0.42 - (0.5 * cos(twoPiIoM)) + (0.08 * cos(2.0 * twoPiIoM)));
+	for ( uint32_t i = 0; i <= M; i++ ) {
+		twoPiIoM = twoPi * ( i + 1 ) / ( M + 2 );
+		H[i] *= ( 0.42 - ( 0.5 * cos(twoPiIoM) ) + ( 0.08 * cos(2.0 * twoPiIoM) ) );
 	}
 
 	Normalize();
@@ -82,10 +82,10 @@ void WindowedSinc::ApplyBlackman()
 
 void WindowedSinc::ApplyHamming()
 {
-	long double twoPi	= 2.0 * M_PI;
-	
-	for (uint32_t i = 0; i <= M; i++) {
-		H[i] *= (0.54 - (0.46 * cos(twoPi * i / M)));
+	long double twoPi = 2.0 * M_PI;
+
+	for ( uint32_t i = 0; i <= M; i++ ) {
+		H[i] *= ( 0.54 - ( 0.46 * cos(twoPi * i / M) ) );
 	}
 
 	Normalize();

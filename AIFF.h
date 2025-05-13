@@ -1,5 +1,5 @@
 /**
- *	WAVE file format.
+ *	AIFF file format.
  */
 
 #ifndef DISKERROR_AIFF_H
@@ -8,6 +8,7 @@
 
 #include <boost/endian.hpp>
 #include <boost/math/cstdfloat/cstdfloat_types.hpp>
+
 using namespace boost;
 using namespace boost::endian;
 
@@ -18,56 +19,56 @@ using namespace std;
 
 
 //double bigExt80ToDouble(const unsigned char val[10])
-long double bigExt80ToNativeLongDouble(const char * data)
+long double bigExt80ToNativeLongDouble(const char *data)
 {
-    typedef struct {
-        big_uint16_t sign_exponent;
-        big_uint64_t mantissa;
-    } big_ext80_struct_t;
+	typedef struct {
+		big_uint16_t sign_exponent;
+		big_uint64_t mantissa;
+	} big_ext80_struct_t;
 
-    big_ext80_struct_t* parts = (big_ext80_struct_t *) data;
+	big_ext80_struct_t *parts = (big_ext80_struct_t *) data;
 
-    const big_int16_t big_7F_16_mask = 0x7FFF;
-    const big_int64_t big_7F_64_mask = 0x7FFFFFFFFFFFFFFF;
+	const big_int16_t big_7F_16_mask = 0x7FFF;
+	const big_int64_t big_7F_64_mask = 0x7FFFFFFFFFFFFFFF;
 
-    const long double  sign     = *data & 0x80 ? -1.0 : 1.0;
-    const int16_t      exponent = parts->sign_exponent & big_7F_16_mask;
-    
-    //  unusual number, infinity or NaN,
-    if (exponent == big_7F_16_mask) {
-        //  infinity, check all 64 bits
-        if((parts->mantissa & big_7F_64_mask) == 0) {
-            return (sign < 0) ?
-                -numeric_limits<long double>::infinity() :
-                numeric_limits<long double>::infinity();
-        }
-        
-        // highest mantissa bit set means quiet NaN
-        return (*(data+2) & 0x80) ?
-            numeric_limits<long double>::quiet_NaN() :
-            numeric_limits<long double>::signaling_NaN();
-    }
-    
-    // 1 bit sign, 15 bit exponent, 64 bit mantissa
-    // value = (-1) ^ s * (normalizeBit + m / 2 ^ 63) * 2 ^ (e - 16383)
-    return sign * (long double) parts->mantissa * powl(2.0L, ((long double) exponent - 16383.0L)-63.0L);
+	const long double sign     = *data & 0x80 ? -1.0 : 1.0;
+	const int16_t     exponent = parts->sign_exponent & big_7F_16_mask;
+
+	//  unusual number, infinity or NaN,
+	if ( exponent == big_7F_16_mask ) {
+		//  infinity, check all 64 bits
+		if ( ( parts->mantissa & big_7F_64_mask ) == 0 ) {
+			return ( sign < 0 ) ?
+			       -numeric_limits<long double>::infinity() :
+			       numeric_limits<long double>::infinity();
+		}
+
+		// highest mantissa bit set means quiet NaN
+		return ( *( data + 2 ) & 0x80 ) ?
+		       numeric_limits<long double>::quiet_NaN() :
+		       numeric_limits<long double>::signaling_NaN();
+	}
+
+	// 1 bit sign, 15 bit exponent, 64 bit mantissa
+	// value = (-1) ^ s * (normalizeBit + m / 2 ^ 63) * 2 ^ (e - 16383)
+	return sign * (long double) parts->mantissa * powl(2.0L, ( (long double) exponent - 16383.0L ) - 63.0L);
 }
 
 
 // Parent class
 struct aChunkID {
-    big_uint32_t id;
+	big_uint32_t id;
 };
 
 typedef struct aChunkHead : aChunkID {
 //	big_uint32_t	id;
-    big_uint32_t size;
+	big_uint32_t size;
 } aChunkHead_t;
 
 typedef struct aChunk : aChunkHead {
 //	big_uint32_t	id;
 //  big_uint32_t size;
-    char8_t         data[];		//	data[size]
+	char8_t data[];        //	data[size]
 } aChunk_t;
 
 
@@ -86,28 +87,28 @@ typedef struct aChunk : aChunkHead {
 //	Data format structure.
 //	Chunk data with type 'COMM' and size 18 will have this structure.
 typedef struct {
-    big_uint16_t numChannels;     // 1 = mono, 2 = stereo, etc.
-    big_uint32_t numSampleFrames; // a frame is one sample for each channel
-    big_uint16_t sampleSize;      // valid bits per sample 8, 16, 24, etc.
-    char         sampleRate[10];  // 32000, 44100, 48000, etc. as a big endian 80-bit extended float
+	big_uint16_t numChannels;     // 1 = mono, 2 = stereo, etc.
+	big_uint32_t numSampleFrames; // a frame is one sample for each channel
+	big_uint16_t sampleSize;      // valid bits per sample 8, 16, 24, etc.
+	char         sampleRate[10];  // 32000, 44100, 48000, etc. as a big endian 80-bit extended float
 } commChunk_t;
 
 //	Chunk data with type 'COMM' and size 18 will have this structure.
 typedef struct {
-    big_uint16_t numChannels;     // 1 = mono, 2 = stereo, etc.
-    big_uint32_t numSampleFrames; // a frame is one sample for each channel
-    big_uint16_t sampleSize;      // valid bits per sample 8, 16, 24, etc.
-    char         sampleRate[10];  // 32000, 44100, 48000, etc. as a big endian 80-bit extended float
-    big_uint32_t compressionType; //
-    char         compressionName[1];     /* variable length array, Pascal string */
+	big_uint16_t numChannels;     // 1 = mono, 2 = stereo, etc.
+	big_uint32_t numSampleFrames; // a frame is one sample for each channel
+	big_uint16_t sampleSize;      // valid bits per sample 8, 16, 24, etc.
+	char         sampleRate[10];  // 32000, 44100, 48000, etc. as a big endian 80-bit extended float
+	big_uint32_t compressionType; //
+	char         compressionName[1];     /* variable length array, Pascal string */
 } commExtChunk_t;
 
 //  Sound data chunk. 'SSND'
 //	dataBlockSize should be the chunk size - 8 for offset and blockSize members
 //  dataBlockSize will be derived from numSampleFrames * numChannels * ceil(sampleSize / 8)
 typedef struct {
-    big_uint32_t       offset;    // Determines where the first sample frame in the soundData starts. Offset is in bytes.
-    big_uint32_t       blockSize;
+	big_uint32_t offset;    // Determines where the first sample frame in the soundData starts. Offset is in bytes.
+	big_uint32_t blockSize;
 //    char8_t            data[];          //	data[size]
 } ssndChunk_t;
 // offset  determines where the first sample frame in the soundData starts.  offset is in bytes.
