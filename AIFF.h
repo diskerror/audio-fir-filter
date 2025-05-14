@@ -25,13 +25,13 @@ long double bigExt80ToNativeLongDouble(const char *data)
 		big_uint64_t mantissa;
 	} big_ext80_struct_t;
 
-	big_ext80_struct_t *parts = (big_ext80_struct_t *) data;
+	auto *parts = (big_ext80_struct_t *) data;
 
 	const big_int16_t big_7F_16_mask = 0x7FFF;
 	const big_int64_t big_7F_64_mask = 0x7FFFFFFFFFFFFFFF;
 
 	const long double sign     = *data & 0x80 ? -1.0 : 1.0;
-	const int16_t     exponent = parts->sign_exponent & big_7F_16_mask;
+	const auto        exponent = (int16_t) parts->sign_exponent & big_7F_16_mask;
 
 	//  unusual number, infinity or NaN,
 	if ( exponent == big_7F_16_mask ) {

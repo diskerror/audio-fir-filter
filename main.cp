@@ -9,7 +9,6 @@
 #include <getopt.h>
 #include <iostream>
 #include <random>
-#include <set>
 #include <stdexcept>
 #include <string>
 #include <unistd.h>
@@ -27,18 +26,16 @@ using namespace boost;
 #define TEMP_SLOPE	20
 #define PROGRESS_WIDTH 80.0
 
-#define MAX_8_BIT      127.0
-#define MAX_16_BIT   32767.0
-#define MAX_24_BIT 8388607.0
-
+// This returns a random number with values -1.0 to 1.0 in triangular distribution.
 inline float_t dither()
 {
 	static random_device                      rd;
 	static mt19937                            gen(rd());
 	static uniform_real_distribution<float_t> low(-1, 0);
 	static uniform_real_distribution<float_t> hi(0, 1);
-	return low(gen) + hi(gen); // This creates triangular dither with values from -1.0 to 1.0.
+	return low(gen) + hi(gen);
 }
+
 
 int main(int argc, char **argv)
 {
@@ -184,19 +181,19 @@ int main(int argc, char **argv)
 				size_t max_possible = 0;
 				switch (audioFile.GetBitsPerSample()) {
 					case 8:
-					max_possible = MAX_8_BIT;
+					max_possible = Diskerror::AudioFile::MAX_VALUE_8_BIT;
 					break;
 
 					case 16:
-					max_possible = MAX_16_BIT;
+					max_possible = Diskerror::AudioFile::MAX_VALUE_16_BIT;
 					break;
 
 					case 24:
-					max_possible = MAX_24_BIT;
+					max_possible = Diskerror::AudioFile::MAX_VALUE_24_BIT;
 					break;
 					
 					default:
-					runtime_error("Can't handle PCM files with this bit depth."); 
+					throw runtime_error("Can't handle PCM files with this bit depth.");
 				}
 
 				if (maxVal > max_possible || normalize) {

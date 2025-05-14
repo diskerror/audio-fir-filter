@@ -35,10 +35,6 @@ class AudioFile {
 	big_uint32_t dataEncoding  = 0x00000000; // 'PCM ' integer, 'IEEE' float
 	big_uint32_t dataEndianess = 0x00000000; // 'big ' or 'litl'
 
-	const uint32_t MAX_VALUE_8_BIT  = 127.0;
-	const uint32_t MAX_VALUE_16_BIT = 32767.0;
-	const uint32_t MAX_VALUE_24_BIT = 8388607.0;
-
 	big_uint32_t dataType       = 0x00000000;
 	uint16_t     numChannels    = 0;
 	uint32_t     sampleRate     = 0;
@@ -60,18 +56,22 @@ class AudioFile {
 	void assertDataFormat();
 
 public:
+	const static uint32_t MAX_VALUE_8_BIT  = 127.0;
+	const static uint32_t MAX_VALUE_16_BIT = 32767.0;
+	const static uint32_t MAX_VALUE_24_BIT = 8388607.0;
+
 	// Constructor
 	//  Requires a valid filesystem path object.
 	AudioFile(const filesystem::path);
 
 	// Factory methods
 	//  Requires a valid file name.
-	static AudioFile Make(string sPath) { return AudioFile(filesystem::path(sPath)); };
+	static AudioFile Make(const string sPath) { return AudioFile(filesystem::path(sPath)); };
 
 	static AudioFile Make(char *cPath) { return AudioFile(filesystem::path(cPath)); };
 
 	// Destructor
-	~AudioFile() {};
+	~AudioFile() = default;
 
 	// Exposing these members because of their useful methods.
 	const filesystem::path file;

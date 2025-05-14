@@ -30,7 +30,7 @@ void WindowedSinc::SetSinc(double Fc, double transition)
 {
 	long double natFc = 2.0 * M_PI * Fc;
 
-	M = (uint32_t) round(4.0 / transition);
+	M = (int32_t) round(4.0 / transition);
 	//	If M is not even then add 1
 	if ( M % 2 != 0 ) { M++; }
 	Mo2 = M / 2;

@@ -24,8 +24,8 @@ using namespace std;
 class WindowedSinc {
 
 	valarray<long double> H;        //  points to the list of coeficients, sizeof (H) = M
-	uint32_t              M = 0;    //  number of coeficients
-	uint32_t              Mo2;      //	M / 2
+	int32_t               M   = 0;  //  number of coeficients
+	int32_t               Mo2 = 0;  //	M / 2
 
 public:
 	WindowedSinc() = default;
