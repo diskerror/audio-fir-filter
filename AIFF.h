@@ -18,7 +18,6 @@ using namespace boost::endian;
 using namespace std;
 
 
-//double bigExt80ToDouble(const unsigned char val[10])
 long double bigExt80ToNativeLongDouble(const char *data)
 {
 	typedef struct {

@@ -45,12 +45,13 @@ int main(int argc, char **argv)
 	auto exitVal = EXIT_SUCCESS;
 
 	try {
-		int opt;
+		int opt = 0;
 		struct option long_options[] = {
 			{"help", no_argument, nullptr, 'h'},
 			{"frequency", required_argument, nullptr, 'f'},
 			{"slope", required_argument, nullptr, 's'},
 			{"normalize", no_argument, nullptr, 'n'},
+			{"directory", required_argument, nullptr, 'd'},
 			{nullptr, 0, nullptr, 0}
 		};
 	
@@ -64,10 +65,9 @@ int main(int argc, char **argv)
 		float64_t freq  = TEMP_FREQ;    //	Fc = freq / sampleRate
 		float64_t slope = TEMP_SLOPE;   //	transition ~= slope / sampleRate
 
-        bool continue_loop = true;
-		while (continue_loop) {
+		while (opt != -1) {
 			int option_index = 0;
-			opt = getopt_long(argc, argv, "hf:s:n", long_options, &option_index);
+			opt = getopt_long(argc, argv, "hf:s:nd:", long_options, &option_index);
 	
 			switch (opt) {
 				case 'h':
@@ -96,14 +96,13 @@ int main(int argc, char **argv)
 
 					throw runtime_error("Unknown option.");
 
-				case -1:
 				default:
-					continue_loop = false;
+					break;
 			}
 		}
 
 		//  Check for input parameter.
-		if (optind >= argc || help == true) {
+		if (optind >= argc || help) {
 			cout << "Applies low-cut (high-pass) FIR filter to WAVE or AIFF file." << endl;
 			cout << "    -f, --frequency <Hz>         Filter cutoff frequency." << endl;
             cout << "    -s, --slope <Hz>             Filter slope." << endl;
