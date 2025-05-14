@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 			//	create windowed sinc kernal
 			Diskerror::WindowedSinc sinc((freq / audioFile.GetSampleRate()), (slope / audioFile.GetSampleRate()));
 			sinc.ApplyBlackman();
-			sinc.MakeIntoHighPass();
+			sinc.MakeLowCut();
 
 			auto Mo2 = (int32_t) sinc.Get_M() / 2;
 

@@ -65,7 +65,7 @@ public:
 
 	void ApplyHamming();
 
-	void MakeIntoHighPass();
+	void MakeLowCut();
 
 	//	For array operator, [0] points to the middle of the coefficients
 	//	i: -Mo2 <= i <= Mo2

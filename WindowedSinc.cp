@@ -91,7 +91,7 @@ void WindowedSinc::ApplyHamming()
 	Normalize();
 }
 
-void WindowedSinc::MakeIntoHighPass()
+void WindowedSinc::MakeLowCut()
 {
 	Gain(-1.0);
 	H[Mo2] += 1.0;
