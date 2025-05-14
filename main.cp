@@ -51,7 +51,6 @@ int main(int argc, char **argv)
 			{"frequency", required_argument, nullptr, 'f'},
 			{"slope", required_argument, nullptr, 's'},
 			{"normalize", no_argument, nullptr, 'n'},
-			{"directory", required_argument, nullptr, 'd'},
 			{nullptr, 0, nullptr, 0}
 		};
 	
@@ -67,7 +66,7 @@ int main(int argc, char **argv)
 
 		while (opt != -1) {
 			int option_index = 0;
-			opt = getopt_long(argc, argv, "hf:s:nd:", long_options, &option_index);
+			opt = getopt_long(argc, argv, "hf:s:n", long_options, &option_index);
 	
 			switch (opt) {
 				case 'h':
