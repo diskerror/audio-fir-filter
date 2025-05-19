@@ -9,6 +9,7 @@
 #include <cfloat>
 #include <filesystem>
 #include <fstream>
+#include <random>
 #include <vector>
 #include <boost/cstdfloat.hpp>
 #include <boost/endian/arithmetic.hpp>
@@ -43,8 +44,6 @@ class AudioFile {
 	uint64_t     dataBlockStart = 0;
 	uint64_t     dataBlockSize  = 0;
 
-	void openFile();
-
 	void openRIFF();    //	RIFF/WAVE < 4G
 	void openRF64();    //	RF64/WAVE > 4G
 	void openAIFF();    //	FORM/AIFF < 4G
@@ -56,26 +55,23 @@ class AudioFile {
 	void assertDataFormat();
 
 public:
-	const static uint32_t MAX_VALUE_8_BIT  = 127.0;
-	const static uint32_t MAX_VALUE_16_BIT = 32767.0;
-	const static uint32_t MAX_VALUE_24_BIT = 8388607.0;
+	constexpr static float MAX_VALUE_8_BIT  = 127.0;
+	constexpr static float MAX_VALUE_16_BIT = 32767.0;
+	constexpr static float MAX_VALUE_24_BIT = 8388607.0;
 
 	// Constructor
-	//  Requires a valid filesystem path object.
-	AudioFile(const filesystem::path);
+	explicit AudioFile(filesystem::path);
 
-	// Factory methods
-	//  Requires a valid file name.
-	static AudioFile Make(const string sPath) { return AudioFile(filesystem::path(sPath)); };
+	explicit AudioFile(const string &sPath) : AudioFile(filesystem::path(sPath)) {};
 
-	static AudioFile Make(char *cPath) { return AudioFile(filesystem::path(cPath)); };
+	explicit AudioFile(char *cPath) : AudioFile(filesystem::path(cPath)) {};
 
 	// Destructor
 	~AudioFile() = default;
 
 	// Exposing these members because of their useful methods.
 	const filesystem::path file;
-	vector <float32_t>     samples;
+	vector<float32_t>      samples;
 
 	inline big_uint32_t GetDataEncoding() { return this->dataEncoding; };
 
@@ -99,7 +95,17 @@ public:
 
 	void WriteSamples();
 
-	inline float &operator[](uint64_t s) { return samples[s]; }
+	inline float_t &operator[](uint64_t s) { return samples[s]; }
+
+	// This returns a random number with values -1.0 to 1.0 in triangular distribution.
+	inline static float_t dither()
+	{
+		static random_device                      rd;
+		static mt19937                            gen(rd());
+		static uniform_real_distribution<float_t> low(-1, 0);
+		static uniform_real_distribution<float_t> hi(0, 1);
+		return low(gen) + hi(gen);
+	}
 };
 
 } // namespace Diskerror

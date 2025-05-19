@@ -6,8 +6,6 @@
 #include "Wave.h"
 #include "AIFF.h"
 
-#include <iomanip>
-#include <iostream>
 #include <random>
 #include <sstream>
 #include <string>
@@ -250,14 +248,14 @@ void AudioFile::openAIFF()
 				this->bitsPerSample = (uint16_t) ceil((float_t) format.sampleSize / 8.0) * 8;
 				this->numChannels   = format.numChannels;
 				this->numSamples    = this->numChannels * format.numSampleFrames;
-				this->dataBlockSize = (uint64_t) (this->numSamples * ( this->bitsPerSample / 8.0 ));
+				this->dataBlockSize = (uint64_t) ( this->numSamples * ( this->bitsPerSample / 8.0 ) );
 				break;
 
 			case 'SSND':
 				this->fileStm.read((char *) &ssndChunk, 8);
 				if ( ssndChunk.offset != 0 && ssndChunk.blockSize != 0 ) {
 					throw runtime_error(
-							"Can't handle files with SSND.offset or SSND.blockSize set to other than zero.");
+						"Can't handle files with SSND.offset or SSND.blockSize set to other than zero.");
 				}
 				this->dataBlockStart = this->fileStm.tellg();
 				this->fileStm.seekg(chunkExam.size.be - 8, ios_base::cur);
@@ -300,7 +298,7 @@ void AudioFile::openAIFC()
 				this->fileStm.read((char *) &ssndChunk, 8);
 				if ( ssndChunk.offset != 0 && ssndChunk.blockSize != 0 ) {
 					throw runtime_error(
-							"Can't handle files with SSND.offset or SSND.blockSize set to other than zero.");
+						"Can't handle files with SSND.offset or SSND.blockSize set to other than zero.");
 				}
 				this->dataBlockStart = this->fileStm.tellg();
 				this->fileStm.seekg(chunkExam.size.be - 8, ios_base::cur);
@@ -382,12 +380,12 @@ void AudioFile::assertDataFormat()
 {
 	if ( this->dataEncoding != 'PCM ' && this->dataEncoding != 'IEEE' ) {
 		throw runtime_error(
-				"ERROR: This method only handles PCM (integer) or IEEE (32-bit float) data in audio files.");
+			"ERROR: This method only handles PCM (integer) or IEEE (32-bit float) data in audio files.");
 	}
 
 	if ( this->dataEncoding == 'PCM ' && this->bitsPerSample >= 32 ) {
 		throw runtime_error(
-				"ERROR: Cannot convert 32-bit integer (PCM) data to 32-bit float without loss of resolution.");
+			"ERROR: Cannot convert 32-bit integer (PCM) data to 32-bit float without loss of resolution.");
 	}
 
 	if ( this->bitsPerSample > 32 ) {
@@ -511,7 +509,7 @@ void AudioFile::WriteSamples()
 	if ( this->bitsPerSample == 8 ) {
 		for ( s = 0; s < this->numSamples; ++s ) {
 			tempInt8[s] = (uint8_t)
-					              this->samples[s] + 127;
+				              this->samples[s] + 127;
 		}
 	}
 	else {
@@ -521,14 +519,14 @@ void AudioFile::WriteSamples()
 					case 16:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
 							store_little_s16((unsigned char *) dPtr, (int16_t)
-									this->samples[s]);
+								this->samples[s]);
 						}
 						break;
 
 					case 24:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
 							store_little_s24((unsigned char *) dPtr, (int32_t)
-									this->samples[s]);
+								this->samples[s]);
 						}
 						break;
 
@@ -554,14 +552,14 @@ void AudioFile::WriteSamples()
 					case 16:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
 							store_big_s16(dPtr, (int16_t)
-									this->samples[s]);
+								this->samples[s]);
 						}
 						break;
 
 					case 24:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
 							store_big_s24(dPtr, (int32_t)
-									this->samples[s]);
+								this->samples[s]);
 						}
 						break;
 
@@ -589,5 +587,6 @@ void AudioFile::WriteSamples()
 	WriteRawData(dataBlock);
 	if ( dataBlock != (unsigned char *) samples.data() ) delete dataBlock;
 }
+
 
 } //  namespace Diskerror
