@@ -176,14 +176,11 @@ int main(int argc, char **argv)
 			for ( uint_fast64_t s = 0; s < audioFile.GetNumSamples(); ++s ) audioFile.samples[s] = tempOutput[s];
 			tempOutput.resize(0);
 
-			//	Only apply adjustment and dither to PCM data.
-			if ( audioFile.is_pcm() ) {
-				//	Normalize if new sample stream goes over maximum sample size.
-				//  A DC offset in one direction may cause overflow in the other direction when removed.
-				if ( audioFile.samples.max_mag() > audioFile.GetSampleMaxMagnitude() || normalize ) {
-					status(verbose, (string) "Doing audio normalize.");
-					audioFile.Normalize();
-				}
+			//	Normalize if new sample stream goes over maximum sample size.
+			//  A DC offset in one direction may cause overflow in the other direction when removed.
+			if ( audioFile.samples.max_mag() > audioFile.GetSampleMaxMagnitude() || normalize ) {
+				status(verbose, (string) "Doing audio normalize.");
+				audioFile.Normalize();
 			}
 
 			status(verbose, (string) "Converting and writing samples back to file.");
