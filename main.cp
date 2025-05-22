@@ -8,6 +8,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <stdexcept>
+#include <stdfloat>
 #include <string>
 #include <boost/math/cstdfloat/cstdfloat_types.hpp>
 
@@ -126,11 +127,11 @@ int main(int argc, char **argv)
 
 			//	define temporary output buffer[samps][chan],
 			status(verbose, (string) "Creating temporary buffer.");
-			Diskerror::VectorMath<float>
+			Diskerror::VectorMath<float32_t>
 				tempOutput(audioFile.GetNumSamples());
 
 			uint64_t progressCount = 0;
-			float    progress;
+			float32_t    progress;
 			uint16_t progressPos;
 
 			cout << fixed << setprecision(1) << flush;
@@ -153,12 +154,12 @@ int main(int argc, char **argv)
 					}
 
 					//	tempOutput[s][chan] = acc
-					tempOutput[s] = (float) acc;
+					tempOutput[s] = (float32_t) acc;
 
 					//	progress bar, do only every x samples
 					if ( progressCount % 7919 == 0 ) {
-						progress    = (float) progressCount / (float) audioFile.GetNumSamples();
-						progressPos = (uint16_t) round((float) PROGRESS_WIDTH * progress);
+						progress    = (float32_t) progressCount / (float32_t) audioFile.GetNumSamples();
+						progressPos = (uint16_t) round((float32_t) PROGRESS_WIDTH * progress);
 
 						cout << "\r" << "["
 						     << string(progressPos, '=') << ">" << string(PROGRESS_WIDTH - progressPos, ' ')
