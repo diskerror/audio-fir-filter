@@ -75,21 +75,21 @@ public:
 		if ( transition <= 0.0 || transition >= 0.5 ) throw runtime_error("Transition band width out of range.");
 
 		const T natFc = twoPi * cutoff_freq;
-		M = lround(4.0 / transition);
+		this->M = lround(4.0 / transition);
 		//	Ensure M is even.
 		//  The Book describes loops using the range of 0 to M such that 0 <= i <= M.
 		//  That includes the value M!
 		//  Therefore, if M==100, then there are 101 slots from 0 to 100.
 		//  This also leaves a value in the center, which keeps the filter semetrical.
-		if ( M % 2 != 0 ) ++M;
-		Mo2 = M / 2;
+		if ( this->M % 2 != 0 ) ++this->M;
+		this->Mo2 = this->M / 2;
 
-		this->resize(M + 1);
+		this->resize(this->M + 1);
 		this->shrink_to_fit();
 
 		int32_t i, imMo2;
-		for ( i = 0; i < Mo2; ++i ) {
-			imMo2 = i - Mo2;
+		for ( i = 0; i < this->Mo2; ++i ) {
+			imMo2 = i - this->Mo2;
 			(*this)[i] = sin(natFc * imMo2) / imMo2;
 		}
 
@@ -97,7 +97,7 @@ public:
 		(*this)[i++] = natFc;
 
 		for ( ; i <= M; ++i ) {
-			imMo2 = i - Mo2;
+			imMo2 = i - this->Mo2;
 			(*this)[i] = sin(natFc * imMo2) / imMo2;
 		}
 
@@ -108,9 +108,9 @@ public:
 	~WindowedSinc() = default;
 
 
-	int32_t getM() { return M; }
+	int32_t getM() { return this->M; }
 
-	int32_t getMo2() { return Mo2; }
+	int32_t getMo2() { return this->Mo2; }
 
 	void normalize() { this->normalize_sum(1.0);}
 
@@ -118,8 +118,8 @@ public:
 	//  Applies window to H.
 	void ApplyBlackman()
 	{
-		for ( size_t i = 0; i <= M; i++ ) {
-			T twoPiIoM = twoPi * (i + 1) / (M + 2);
+		for ( size_t i = 0; i <= this->M; i++ ) {
+			T twoPiIoM = twoPi * (i + 1) / (this->M + 2);
 			(*this)[i] *= (0.42 - (0.5 * cos(twoPiIoM)) + (0.08 * cos(2.0 * twoPiIoM)));
 		}
 
@@ -129,8 +129,8 @@ public:
 
 	void ApplyHamming()
 	{
-		for ( size_t i = 0; i <= M; i++ ) {
-			(*this)[i] *= (0.54 - (0.46 * cos(twoPi * i / M)));
+		for ( size_t i = 0; i <= this->M; i++ ) {
+			(*this)[i] *= (0.54 - (0.46 * cos(twoPi * i / this->M)));
 		}
 
 		this->normalize();
@@ -155,7 +155,7 @@ public:
 	//  TODO: TEST THIS
 	T fms(auto begin2, int32_t n = 0)
 	{
-		if ( abs(n) >= M ) throw runtime_error("'n' is too big");
+		if ( abs(n) >= this->M ) throw runtime_error("'n' is too big");
 
 		auto begin1 = this->begin(), end1 = this->end();
 		if ( n < 0 ) begin1 = this->end() + n;

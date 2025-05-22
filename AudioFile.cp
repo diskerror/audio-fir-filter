@@ -6,15 +6,14 @@
 #include "Wave.h"
 #include "AIFF.h"
 
-#include <random>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <random>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 namespace Diskerror {
 
@@ -59,7 +58,7 @@ AudioFile::AudioFile(const filesystem::path & fPath) : file(fPath)
 	header.size.le = 0;
 	header.type    = 0;
 
-	if(!filesystem::is_regular_file(fPath)) throw runtime_error("Not a regular file.");
+	if ( !filesystem::is_regular_file(fPath) ) throw runtime_error("Not a regular file.");
 
 	this->fileStm.open(this->file.string(), ios_base::in | ios_base::out | ios_base::binary);
 	if ( this->fileStm.fail() ) {
@@ -418,6 +417,18 @@ void AudioFile::assertDataFormat()
 }
 
 
+//  We can't simply use Dither() because we need it to return a different value for each sample.
+static float32_t Dither()
+{
+	static std::random_device                        rd;
+	static std::mt19937                              gen(rd());
+	static std::uniform_real_distribution<float32_t> low(-1, 0);
+	static std::uniform_real_distribution<float32_t> hi(0, 1);
+
+	return low(gen) + hi(gen);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -446,18 +457,21 @@ void AudioFile::ReadSamples()
 		throw runtime_error("ERROR: Cannot read data without loss of resolution.");
 	}
 	else {
+		dPtr = dataBlock;
 		switch ( this->dataEndianess ) {
 			case 'litl':
 				switch ( this->bitsPerSample ) {
 					case 16:
-						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
-							this->samples[s] = (float32_t) load_little_s16(dPtr);
+						for ( auto & elem : this->samples ) {
+							elem = (float32_t) load_little_s16(dPtr);
+							dPtr += 2;
 						}
 						break;
 
 					case 24:
-						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
-							this->samples[s] = (float32_t) load_little_s24(dPtr);
+						for ( auto & elem : this->samples ) {
+							elem = (float32_t) load_little_s24(dPtr);
+							dPtr += 3;
 						}
 						break;
 
@@ -482,14 +496,16 @@ void AudioFile::ReadSamples()
 			case 'big ':
 				switch ( this->bitsPerSample ) {
 					case 16:
-						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
-							this->samples[s] = (float32_t) load_big_s16(dPtr);
+						for ( auto & elem : this->samples ) {
+							elem = (float32_t) load_big_s16(dPtr);
+							dPtr += 2;
 						}
 						break;
 
 					case 24:
-						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
-							this->samples[s] = (float32_t) load_big_s24(dPtr);
+						for ( auto & elem : this->samples ) {
+							elem = (float32_t) load_big_s24(dPtr);
+							dPtr += 3;
 						}
 						break;
 

@@ -8,9 +8,8 @@
 #include <getopt.h>
 #include <iostream>
 #include <stdexcept>
-#include <stdfloat>
 #include <string>
-#include <boost/math/cstdfloat/cstdfloat_types.hpp>
+#include <boost/cstdfloat.hpp>
 
 using namespace std;
 using namespace boost;
@@ -20,14 +19,14 @@ using namespace boost;
 #include "WindowedSinc.h"
 
 //	Default values.
-#define TEMP_FREQ    20
-#define TEMP_SLOPE    20
+#define TEMP_FREQ  15
+#define TEMP_SLOPE 10
 
 #define PROGRESS_WIDTH 80.0
 
 void status(bool verbose, string s)
 {
-	if ( verbose )cout << s << endl;
+	if ( verbose ) cout << s << endl;
 }
 
 
@@ -130,9 +129,9 @@ int main(int argc, char **argv)
 			Diskerror::VectorMath<float32_t>
 				tempOutput(audioFile.GetNumSamples());
 
-			uint64_t progressCount = 0;
-			float32_t    progress;
-			uint16_t progressPos;
+			uint64_t  progressCount = 0;
+			float32_t progress;
+			uint16_t  progressPos;
 
 			cout << fixed << setprecision(1) << flush;
 			cout << "Processing file: " << audioFile.file.filename() << endl;
@@ -163,13 +162,13 @@ int main(int argc, char **argv)
 
 						cout << "\r" << "["
 						     << string(progressPos, '=') << ">" << string(PROGRESS_WIDTH - progressPos, ' ')
-						     << "] " << (progress * 100) + 0.05 << " %  " << tempOutput[s] << flush;
+						     << "] " << (progress * 100) + 0.05 << " %  " << flush;
 					}
 					progressCount++;
 				}    //	End loop over samples.
 			}    //	End loop over channels.
 
-			cout << "\r" << "[" << string(PROGRESS_WIDTH + 1, '=') << "] 100.0 %          " << endl;
+			cout << "\r" << "[" << string(PROGRESS_WIDTH + 1, '=') << "] 100.0 %        " << endl;
 			cout.flush();
 
 			//	copy result back to our original file
@@ -178,7 +177,7 @@ int main(int argc, char **argv)
 			tempOutput.resize(0);
 
 			//	Only apply adjustment and dither to PCM data.
-			if ( audioFile.is_pcm()) {
+			if ( audioFile.is_pcm() ) {
 				//	Normalize if new sample stream goes over maximum sample size.
 				//  A DC offset in one direction may cause overflow in the other direction when removed.
 				if ( audioFile.samples.max_mag() > audioFile.GetSampleMaxMagnitude() || normalize ) {

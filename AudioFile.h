@@ -8,12 +8,9 @@
 
 #include <filesystem>
 #include <fstream>
-#include <stdfloat>
-#include <vector>
-#include <boost/cstdfloat.hpp>
 #include <boost/endian/arithmetic.hpp>
 #include <boost/limits.hpp>
-#include <boost/math/cstdfloat/cstdfloat_types.hpp>
+#include <boost/cstdfloat.hpp>
 
 #include "VectorMath.h"
 
