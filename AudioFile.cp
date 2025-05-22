@@ -10,7 +10,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <sys/stat.h>
 
 #include <cstdint>
 #include <cstdio>
@@ -143,7 +142,7 @@ void AudioFile::openRIFF()
 
 	this->dataType      = 'ms  ' & (big_uint32_t) format.type;
 	this->sampleRate    = format.sampleRate;
-	this->bitsPerSample = (uint16_t) ceil((float) format.bitsPerSample / 8.0) * 8;
+	this->bitsPerSample = (uint16_t) ceil((float32_t) format.bitsPerSample / 8.0) * 8;
 	this->numChannels   = format.channelCount;
 	this->numSamples    = this->dataBlockSize / (this->bitsPerSample / 8);
 
@@ -215,7 +214,7 @@ void AudioFile::openRF64()
 
 	this->dataType      = 'ms  ' & (big_uint32_t) format.type;
 	this->sampleRate    = format.sampleRate;
-	this->bitsPerSample = (uint16_t) ceil((float) format.bitsPerSample / 8.0) * 8;
+	this->bitsPerSample = (uint16_t) ceil((float32_t) format.bitsPerSample / 8.0) * 8;
 	this->numChannels   = format.channelCount;
 
 	//  Always little endian for RF64
@@ -254,7 +253,7 @@ void AudioFile::openAIFF()
 			case 'COMM':
 				this->fileStm.read((char *) &format, sizeof(format));
 				this->sampleRate    = (uint16_t) bigExt80ToNativeLongDouble(format.sampleRate);
-				this->bitsPerSample = (uint16_t) ceil((float) format.sampleSize / 8.0) * 8;
+				this->bitsPerSample = (uint16_t) ceil((float32_t) format.sampleSize / 8.0) * 8;
 				this->numChannels   = format.numChannels;
 				this->numSamples    = this->numChannels * format.numSampleFrames;
 				this->dataBlockSize = (uint64_t) (this->numSamples * (this->bitsPerSample / 8.0));
@@ -321,7 +320,7 @@ void AudioFile::openAIFC()
 	} while ( this->fileStm.good() );
 
 	this->sampleRate    = (uint16_t) bigExt80ToNativeLongDouble(format.sampleRate);
-	this->bitsPerSample = (uint16_t) ceil((float) format.sampleSize / 8.0) * 8;
+	this->bitsPerSample = (uint16_t) ceil((float32_t) format.sampleSize / 8.0) * 8;
 	this->numChannels   = format.numChannels;
 	this->numSamples    = this->numChannels * format.numSampleFrames;
 	this->dataBlockSize = this->numSamples * (this->bitsPerSample / 8);
@@ -353,7 +352,7 @@ void AudioFile::openAIFC()
 }
 
 //	Maximum value storable == 2^(nBits-1) - 1
-float AudioFile::GetSampleMaxMagnitude()
+float32_t AudioFile::GetSampleMaxMagnitude()
 {
 //	if ( dataEncoding != 'PCM ' ) throw logic_error("Only PCM sammples have a maximum magnitude.");
 	switch ( this->GetBitsPerSample() ) {
@@ -430,7 +429,7 @@ void AudioFile::ReadSamples()
 	this->assertDataFormat();
 	auto dataBlock = this->ReadRawData();
 	auto tempInt8  = (uint8_t *) dataBlock;
-	auto tempFloat = (float *) dataBlock;
+	auto tempFloat = (float32_t *) dataBlock;
 
 	uint_fast64_t s;    //	Index variable for samples.
 	unsigned char *dPtr;
@@ -440,7 +439,7 @@ void AudioFile::ReadSamples()
 
 	if ( this->bitsPerSample == 8 ) {
 		for ( s = 0; s < this->numSamples; ++s ) {
-			this->samples[s] = (float) tempInt8[s] - 127;
+			this->samples[s] = (float32_t) tempInt8[s] - 127;
 		}
 	}
 	else if ( this->bitsPerSample > 32 ) {
@@ -452,13 +451,13 @@ void AudioFile::ReadSamples()
 				switch ( this->bitsPerSample ) {
 					case 16:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
-							this->samples[s] = (float) load_little_s16(dPtr);
+							this->samples[s] = (float32_t) load_little_s16(dPtr);
 						}
 						break;
 
 					case 24:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
-							this->samples[s] = (float) load_little_s24(dPtr);
+							this->samples[s] = (float32_t) load_little_s24(dPtr);
 						}
 						break;
 
@@ -466,7 +465,7 @@ void AudioFile::ReadSamples()
 					case 32:
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 						for ( s = 0; s < this->numSamples; ++s ) {
-							this->samples[s] = (float) tempFloat[s];
+							this->samples[s] = (float32_t) tempFloat[s];
 						}
 #else   //  __ORDER_BIG_ENDIAN__
 						for(s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr+=4) {
@@ -484,13 +483,13 @@ void AudioFile::ReadSamples()
 				switch ( this->bitsPerSample ) {
 					case 16:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
-							this->samples[s] = (float) load_big_s16(dPtr);
+							this->samples[s] = (float32_t) load_big_s16(dPtr);
 						}
 						break;
 
 					case 24:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
-							this->samples[s] = (float) load_big_s24(dPtr);
+							this->samples[s] = (float32_t) load_big_s24(dPtr);
 						}
 						break;
 
@@ -502,7 +501,7 @@ void AudioFile::ReadSamples()
 						}
 #else   //  __ORDER_BIG_ENDIAN__
 						for(s = 0; s < this->numSamples;) {
-							this->samples[s] = (float) tempFloat[s];
+							this->samples[s] = (float32_t) tempFloat[s];
 						}
 #endif
 						break;

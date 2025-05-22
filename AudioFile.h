@@ -6,9 +6,9 @@
 #define DISKERROR_AUDIOFILE_H
 
 
-#include <cfloat>
 #include <filesystem>
 #include <fstream>
+#include <stdfloat>
 #include <vector>
 #include <boost/cstdfloat.hpp>
 #include <boost/endian/arithmetic.hpp>
@@ -55,9 +55,9 @@ class AudioFile {
 	void assertDataFormat();
 
 public:
-	constexpr static float MAX_VALUE_8_BIT  = 127.0;
-	constexpr static float MAX_VALUE_16_BIT = 32767.0;
-	constexpr static float MAX_VALUE_24_BIT = 8388607.0;
+	constexpr static float32_t MAX_VALUE_8_BIT  = 127.0;
+	constexpr static float32_t MAX_VALUE_16_BIT = 32767.0;
+	constexpr static float32_t MAX_VALUE_24_BIT = 8388607.0;
 
 	// Constructor
 	explicit AudioFile(const filesystem::path & fPath);
@@ -67,7 +67,7 @@ public:
 
 	// Exposing these members because of their useful methods.
 	const filesystem::path file;
-	VectorMath<float>      samples;
+	VectorMath<float32_t>      samples;
 
 	big_uint32_t GetDataEncoding() const { return this->dataEncoding; };
 
@@ -85,7 +85,7 @@ public:
 
 	uint64_t GetDataBlockSize() const { return this->dataBlockSize; };
 
-	float GetSampleMaxMagnitude();
+	float32_t GetSampleMaxMagnitude();
 
 	unsigned char *ReadRawData();
 
@@ -95,9 +95,11 @@ public:
 
 	void Normalize() { samples.normalize_mag(this->GetSampleMaxMagnitude()); }
 
+	static float32_t Dither();
+
 	void WriteSamples();
 
-	float & operator[](uint64_t s) { return samples[s]; }
+	float32_t & operator[](uint64_t s) { return samples[s]; }
 };
 
 } // namespace Diskerror
