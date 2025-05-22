@@ -184,9 +184,6 @@ int main(int argc, char **argv)
 					status(verbose, (string) "Doing audio normalize.");
 					audioFile.Normalize();
 				}
-
-				status(verbose, (string) "Doing audio dither.");
-				audioFile.samples.dither();
 			}
 
 			status(verbose, (string) "Converting and writing samples back to file.");

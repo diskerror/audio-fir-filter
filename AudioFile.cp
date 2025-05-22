@@ -418,7 +418,7 @@ void AudioFile::assertDataFormat()
 
 
 //  We can't simply use Dither() because we need it to return a different value for each sample.
-static float32_t Dither()
+float32_t AudioFile::Dither()
 {
 	static std::random_device                        rd;
 	static std::mt19937                              gen(rd());
@@ -537,7 +537,7 @@ void AudioFile::ReadSamples()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //	Assumes data will be the same size as the buffer that was read.
-void AudioFile::WriteSamples()
+void AudioFile::WriteSamples(const bool do_dither)
 {
 	this->assertDataFormat();
 	auto dataBlock = (unsigned char *) calloc(this->dataBlockSize, 1);
@@ -547,8 +547,15 @@ void AudioFile::WriteSamples()
 	unsigned char *dPtr;
 
 	if ( this->bitsPerSample == 8 ) {
-		for ( s = 0; s < this->numSamples; ++s ) {
-			tempInt8[s] = (uint8_t) this->samples[s] + 127;
+		if ( do_dither ) {
+			for ( s = 0; s < this->numSamples; ++s ) {
+				tempInt8[s] = (uint8_t) (this->samples[s] + this->Dither()) + 127;
+			}
+		}
+		else {
+			for ( s = 0; s < this->numSamples; ++s ) {
+				tempInt8[s] = (uint8_t) this->samples[s] + 127;
+			}
 		}
 	}
 	else {
@@ -557,16 +564,32 @@ void AudioFile::WriteSamples()
 			case 'litl':
 				switch ( this->bitsPerSample ) {
 					case 16:
-						for ( auto & elem : this->samples ) {
-							store_little_s16(dPtr, (int16_t) elem);
-							dPtr += 2;
+						if ( do_dither ) {
+							for ( auto & elem : this->samples ) {
+								store_little_s16(dPtr, (int16_t) (elem + this->Dither()));
+								dPtr += 2;
+							}
+						}
+						else {
+							for ( auto & elem : this->samples ) {
+								store_little_s16(dPtr, (int16_t) elem);
+								dPtr += 2;
+							}
 						}
 						break;
 
 					case 24:
-						for ( auto & elem : this->samples ) {
-							store_little_s24(dPtr, (int32_t) elem);
-							dPtr += 3;
+						if ( do_dither ) {
+							for ( auto & elem : this->samples ) {
+								store_little_s24(dPtr, (int32_t) (elem + this->Dither()));
+								dPtr += 3;
+							}
+						}
+						else {
+							for ( auto & elem : this->samples ) {
+								store_little_s24(dPtr, (int32_t) elem);
+								dPtr += 3;
+							}
 						}
 						break;
 
@@ -576,7 +599,7 @@ void AudioFile::WriteSamples()
 						dataBlock = (unsigned char *) this->samples.data();
 #else   //  __ORDER_BIG_ENDIAN__
 						for(s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr+=4) {
-							this->ReverseCopy4Bytes(dPtr, (unsigned char*)&this->samples[s]);
+							this->ReverseCopy4Bytes(dPtr, (unsigned char*) &this->samples[s]);
 						}
 #endif
 						break;
@@ -589,16 +612,32 @@ void AudioFile::WriteSamples()
 			case 'big ':
 				switch ( this->bitsPerSample ) {
 					case 16:
-						for ( auto & elem : this->samples ) {
-							store_big_s16(dPtr, (int16_t) elem);
-							dPtr += 2;
+						if ( do_dither ) {
+							for ( auto & elem : this->samples ) {
+								store_big_s16(dPtr, (int16_t) (elem + this->Dither()));
+								dPtr += 2;
+							}
+						}
+						else {
+							for ( auto & elem : this->samples ) {
+								store_big_s16(dPtr, (int16_t) elem);
+								dPtr += 2;
+							}
 						}
 						break;
 
 					case 24:
-						for ( auto & elem : this->samples ) {
-							store_big_s24(dPtr, (int32_t) elem);
-							dPtr += 3;
+						if ( do_dither ) {
+							for ( auto & elem : this->samples ) {
+								store_big_s24(dPtr, (int32_t) (elem + this->Dither()));
+								dPtr += 3;
+							}
+						}
+						else {
+							for ( auto & elem : this->samples ) {
+								store_big_s24(dPtr, (int32_t) elem);
+								dPtr += 3;
+							}
 						}
 						break;
 

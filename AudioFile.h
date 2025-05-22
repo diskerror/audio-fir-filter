@@ -64,7 +64,7 @@ public:
 
 	// Exposing these members because of their useful methods.
 	const filesystem::path file;
-	VectorMath<float32_t>      samples;
+	VectorMath<float32_t>  samples;
 
 	big_uint32_t GetDataEncoding() const { return this->dataEncoding; };
 
@@ -94,7 +94,7 @@ public:
 
 	static float32_t Dither();
 
-	void WriteSamples();
+	void WriteSamples(const bool do_dither = true);
 
 	float32_t & operator[](uint64_t s) { return samples[s]; }
 };
