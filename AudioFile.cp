@@ -8,8 +8,14 @@
 
 #include <random>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <sys/stat.h>
+
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
 
 namespace Diskerror {
 
@@ -27,8 +33,8 @@ string bigInt2str(big_uint32_t fc)
 typedef struct ChunkHead {
 	big_uint32_t id;
 	union {
-		big_uint32_t   be;
-		little_int32_t le;
+		big_uint32_t    be;
+		little_uint32_t le;
 	}            size;
 } chunkHead_t;
 
@@ -47,12 +53,14 @@ typedef struct {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-AudioFile::AudioFile(const filesystem::path fPath) : file(fPath)
+AudioFile::AudioFile(const filesystem::path & fPath) : file(fPath)
 {
 	mediaHeader_t header;
 	header.baseID  = 0;
 	header.size.le = 0;
 	header.type    = 0;
+
+	if(!filesystem::is_regular_file(fPath)) throw runtime_error("Not a regular file.");
 
 	this->fileStm.open(this->file.string(), ios_base::in | ios_base::out | ios_base::binary);
 	if ( this->fileStm.fail() ) {
@@ -60,7 +68,7 @@ AudioFile::AudioFile(const filesystem::path fPath) : file(fPath)
 	}
 
 	//	Audio files always have a 12 byte header.
-	this->fileStm.read((char *) &header, sizeof( header ));
+	this->fileStm.read((char *) &header, sizeof(header));
 	this->fileType    = header.baseID;
 	this->fileSubType = header.type;
 	switch ( this->fileType ) {
@@ -115,10 +123,10 @@ void AudioFile::openRIFF()
 
 		switch ( chunkExam.id ) {
 			case 'fmt ':
-				this->fileStm.read((char *) &format, sizeof( format ));
+				this->fileStm.read((char *) &format, sizeof(format));
 
 				//	skip over remainder, if any
-				this->fileStm.seekg(chunkExam.size.le - sizeof( format ), ios_base::cur);
+				this->fileStm.seekg(chunkExam.size.le - sizeof(format), ios_base::cur);
 				break;
 
 			case 'data':
@@ -137,7 +145,7 @@ void AudioFile::openRIFF()
 	this->sampleRate    = format.sampleRate;
 	this->bitsPerSample = (uint16_t) ceil((float) format.bitsPerSample / 8.0) * 8;
 	this->numChannels   = format.channelCount;
-	this->numSamples    = this->dataBlockSize / ( this->bitsPerSample / 8 );
+	this->numSamples    = this->dataBlockSize / (this->bitsPerSample / 8);
 
 	//  Always little endian for RIFF
 	this->dataEndianess = 'litl';
@@ -174,18 +182,19 @@ void AudioFile::openRF64()
 
 		switch ( chunkExam.id ) {
 			case 'fmt ':
-				this->fileStm.read((char *) &format, sizeof( format ));
+				this->fileStm.read((char *) &format, sizeof(format));
 
 				//	skip over remainder, if any
-				this->fileStm.seekg(chunkExam.size.le - sizeof( format ), ios_base::cur);
+				this->fileStm.seekg((std::basic_istream<char>::off_type) chunkExam.size.le - sizeof(format),
+				                    ios_base::cur);
 				break;
 
 			case 'ds64':
-				this->fileStm.read((char *) &ds64, sizeof( ds64 ));
+				this->fileStm.read((char *) &ds64, sizeof(ds64));
 				this->dataBlockSize = ds64.dataSize;
 
 				//	skip over remainder, if any
-				this->fileStm.seekg(chunkExam.size.le - sizeof( ds64 ), ios_base::cur);
+				this->fileStm.seekg((size_t) chunkExam.size.le - sizeof(ds64), ios_base::cur);
 				break;
 
 			case 'data':
@@ -194,7 +203,7 @@ void AudioFile::openRF64()
 				}
 
 				this->dataBlockStart = this->fileStm.tellg();
-				this->fileStm.seekg(this->dataBlockSize, ios_base::cur);
+				this->fileStm.seekg((size_t) this->dataBlockSize, ios_base::cur);
 				break;
 
 				// skip over other chunks.
@@ -206,7 +215,7 @@ void AudioFile::openRF64()
 
 	this->dataType      = 'ms  ' & (big_uint32_t) format.type;
 	this->sampleRate    = format.sampleRate;
-	this->bitsPerSample = (uint16_t) ceil((float_t) format.bitsPerSample / 8.0) * 8;
+	this->bitsPerSample = (uint16_t) ceil((float) format.bitsPerSample / 8.0) * 8;
 	this->numChannels   = format.channelCount;
 
 	//  Always little endian for RF64
@@ -224,7 +233,7 @@ void AudioFile::openRF64()
 			break;
 	}
 
-	this->numSamples = this->dataBlockSize / ( this->bitsPerSample / 8 );
+	this->numSamples = this->dataBlockSize / (this->bitsPerSample / 8);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -239,16 +248,16 @@ void AudioFile::openAIFF()
 		chunkExam.id      = 0;
 		chunkExam.size.be = 0;    //	big endian
 
-		this->fileStm.read((char *) &chunkExam, sizeof( chunkExam ));
+		this->fileStm.read((char *) &chunkExam, sizeof(chunkExam));
 
 		switch ( chunkExam.id ) {
 			case 'COMM':
-				this->fileStm.read((char *) &format, sizeof( format ));
+				this->fileStm.read((char *) &format, sizeof(format));
 				this->sampleRate    = (uint16_t) bigExt80ToNativeLongDouble(format.sampleRate);
-				this->bitsPerSample = (uint16_t) ceil((float_t) format.sampleSize / 8.0) * 8;
+				this->bitsPerSample = (uint16_t) ceil((float) format.sampleSize / 8.0) * 8;
 				this->numChannels   = format.numChannels;
 				this->numSamples    = this->numChannels * format.numSampleFrames;
-				this->dataBlockSize = (uint64_t) ( this->numSamples * ( this->bitsPerSample / 8.0 ) );
+				this->dataBlockSize = (uint64_t) (this->numSamples * (this->bitsPerSample / 8.0));
 				break;
 
 			case 'SSND':
@@ -290,8 +299,8 @@ void AudioFile::openAIFC()
 
 		switch ( chunkExam.id ) {
 			case 'COMM':  //  Extended Common Chunk
-				this->fileStm.read((char *) &format, sizeof( format ));
-				this->fileStm.seekg(chunkExam.size.be - sizeof( format ), ios_base::cur);
+				this->fileStm.read((char *) &format, sizeof(format));
+				this->fileStm.seekg(chunkExam.size.be - sizeof(format), ios_base::cur);
 				break;
 
 			case 'SSND':
@@ -312,10 +321,10 @@ void AudioFile::openAIFC()
 	} while ( this->fileStm.good() );
 
 	this->sampleRate    = (uint16_t) bigExt80ToNativeLongDouble(format.sampleRate);
-	this->bitsPerSample = (uint16_t) ceil((float_t) format.sampleSize / 8.0) * 8;
+	this->bitsPerSample = (uint16_t) ceil((float) format.sampleSize / 8.0) * 8;
 	this->numChannels   = format.numChannels;
 	this->numSamples    = this->numChannels * format.numSampleFrames;
-	this->dataBlockSize = this->numSamples * ( this->bitsPerSample / 8 );
+	this->dataBlockSize = this->numSamples * (this->bitsPerSample / 8);
 
 	switch ( format.compressionType ) {
 		case 'NONE':
@@ -343,6 +352,29 @@ void AudioFile::openAIFC()
 	this->dataType = format.compressionType;
 }
 
+//	Maximum value storable == 2^(nBits-1) - 1
+float AudioFile::GetSampleMaxMagnitude()
+{
+//	if ( dataEncoding != 'PCM ' ) throw logic_error("Only PCM sammples have a maximum magnitude.");
+	switch ( this->GetBitsPerSample() ) {
+		case 8:
+			return MAX_VALUE_8_BIT;    //  127
+
+		case 16:
+			return MAX_VALUE_16_BIT;   //  32,767
+
+		case 24:
+			return MAX_VALUE_24_BIT;   //  8,388,607
+
+		case 32:
+			return 1.0;   //  8,388,607
+
+		default:
+			throw runtime_error("Can't handle PCM files with this bit depth.");
+	}
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 unsigned char *AudioFile::ReadRawData()
 {
@@ -353,21 +385,14 @@ unsigned char *AudioFile::ReadRawData()
 	return data;
 }
 
-void AudioFile::WriteRawData(unsigned char *data)
+void AudioFile::WriteRawData(const unsigned char *data)
 {
 	this->fileStm.clear();
 	this->fileStm.seekp(this->dataBlockStart);
 	this->fileStm.write((char *) data, this->dataBlockSize);
 }
 
-
-// void AudioFile::ReverseCopyBytes(unsigned char * dest, unsigned char * src, uint64_t count)
-// {
-//    for(uint64_t d = 0, s = count - 1; d < count; ++d, --s) {
-//        dest[d] = src[s];
-//    }
-// }
-void AudioFile::ReverseCopy4Bytes(unsigned char *dest, unsigned char *src)
+void AudioFile::ReverseCopy4Bytes(unsigned char *dest, const unsigned char *src)
 {
 	dest[0] = src[3];
 	dest[1] = src[2];
@@ -410,8 +435,8 @@ void AudioFile::ReadSamples()
 	uint_fast64_t s;    //	Index variable for samples.
 	unsigned char *dPtr;
 
-	this->samples.resize(this->numSamples);
-	this->samples.shrink_to_fit();
+	samples.resize(this->numSamples);
+	samples.shrink_to_fit();
 
 	if ( this->bitsPerSample == 8 ) {
 		for ( s = 0; s < this->numSamples; ++s ) {
@@ -518,15 +543,13 @@ void AudioFile::WriteSamples()
 				switch ( this->bitsPerSample ) {
 					case 16:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
-							store_little_s16((unsigned char *) dPtr, (int16_t)
-								this->samples[s]);
+							store_little_s16((unsigned char *) dPtr, (int16_t) this->samples[s]);
 						}
 						break;
 
 					case 24:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
-							store_little_s24((unsigned char *) dPtr, (int32_t)
-								this->samples[s]);
+							store_little_s24((unsigned char *) dPtr, (int32_t) this->samples[s]);
 						}
 						break;
 
@@ -542,8 +565,7 @@ void AudioFile::WriteSamples()
 						break;
 
 					default:
-						//  Should not get here.
-						throw new exception();
+						throw runtime_error("Should not get here.");
 				}
 				break;
 
@@ -551,15 +573,13 @@ void AudioFile::WriteSamples()
 				switch ( this->bitsPerSample ) {
 					case 16:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
-							store_big_s16(dPtr, (int16_t)
-								this->samples[s]);
+							store_big_s16(dPtr, (int16_t) this->samples[s]);
 						}
 						break;
 
 					case 24:
 						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
-							store_big_s24(dPtr, (int32_t)
-								this->samples[s]);
+							store_big_s24(dPtr, (int32_t) this->samples[s]);
 						}
 						break;
 
@@ -587,6 +607,5 @@ void AudioFile::WriteSamples()
 	WriteRawData(dataBlock);
 	if ( dataBlock != (unsigned char *) samples.data() ) delete dataBlock;
 }
-
 
 } //  namespace Diskerror

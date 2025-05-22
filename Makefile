@@ -25,12 +25,12 @@ lowcut: $(SRCS) $(HDRS) makefile
 echo:
 	rm -rf ~/Desktop/test\ audio
 	cp -a ~/ownCloud/test\ audio ~/Desktop
-	./lowcut -f 300 -s 400  ~/Desktop/test\ audio/*{.wav,.aif}
+	./lowcut -f 400 -s 800 ~/Desktop/test\ audio/*{.wav,.aif}
 
 test:
 	rm -rf ~/Desktop/test\ audio
 	cp -a ~/ownCloud/test\ audio ~/Desktop
-	./lowcut -f 200 -s 80 -n ~/Desktop/test\ audio/*{.wav,.aif}
+	./lowcut -f 330 -s 80 -nv ~/Desktop/test\ audio/*{.wav,.aif}
 
 clean:
 	rm lowcut

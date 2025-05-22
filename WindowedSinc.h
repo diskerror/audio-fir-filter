@@ -15,7 +15,9 @@
 
 #include <cmath>
 #include <numbers>
-#include <vector>
+#include <valarray>
+
+#include "VectorMath.h"
 
 namespace Diskerror {
 
@@ -28,17 +30,50 @@ using namespace std;
  * @tparam T
  */
 template<typename T>
-class WindowedSinc : protected vector<T> {
+class WindowedSinc : public VectorMath<T> {
 
 	const T twoPi = 2.0 * numbers::pi_v<T>;
 
 	int32_t M   = 0;
 	int32_t Mo2 = 0;  //	M / 2, or midpoint of size, which is always a positive odd number
 
+	//  Prevent usage of these.
+	using VectorMath<T>::operator=;
+	using VectorMath<T>::assign;
+	using VectorMath<T>::assign_range;
+	using VectorMath<T>::get_allocator;
+	using VectorMath<T>::reserve;
+	using VectorMath<T>::clear;
+	using VectorMath<T>::insert;
+	using VectorMath<T>::insert_range;
+	using VectorMath<T>::emplace;
+	using VectorMath<T>::erase;
+	using VectorMath<T>::push_back;
+	using VectorMath<T>::emplace_back;
+	using VectorMath<T>::append_range;
+	using VectorMath<T>::pop_back;
+	using VectorMath<T>::resize;
+	using VectorMath<T>::swap;
+
+	using VectorMath<T>::normalize_mag;
+	using VectorMath<T>::normalize_sum;
+
 public:
 
+	/**
+	 * Constructor
+	 *
+	 * The cutoff frequency and transition band width are passed as fractions of the sample rate.
+	 * Meaningful numbers follow the rule, in: 0.0 < in < 0.5
+	 *
+	 * @param cutoff_freq
+	 * @param transition
+	 */
 	WindowedSinc(const T cutoff_freq, const T transition)
 	{
+		if ( cutoff_freq <= 0.0 || cutoff_freq >= 0.5 ) throw runtime_error("Cut-off frequency out of range.");
+		if ( transition <= 0.0 || transition >= 0.5 ) throw runtime_error("Transition band width out of range.");
+
 		const T natFc = twoPi * cutoff_freq;
 		M = lround(4.0 / transition);
 		//	Ensure M is even.
@@ -46,74 +81,38 @@ public:
 		//  That includes the value M!
 		//  Therefore, if M==100, then there are 101 slots from 0 to 100.
 		//  This also leaves a value in the center, which keeps the filter semetrical.
-		if ( M % 2 != 0 ) { ++M; }
+		if ( M % 2 != 0 ) ++M;
 		Mo2 = M / 2;
 
 		this->resize(M + 1);
+		this->shrink_to_fit();
 
 		int32_t i, imMo2;
 		for ( i = 0; i < Mo2; ++i ) {
 			imMo2 = i - Mo2;
-			*(this->data() + i) = sin(natFc * imMo2) / imMo2;
+			(*this)[i] = sin(natFc * imMo2) / imMo2;
 		}
 
 		//	Account for divide by zero when i == Mo2
-		*(this->data() + i++) = natFc;
+		(*this)[i++] = natFc;
 
 		for ( ; i <= M; ++i ) {
 			imMo2 = i - Mo2;
-			*(this->data() + i) = sin(natFc * imMo2) / imMo2;
+			(*this)[i] = sin(natFc * imMo2) / imMo2;
 		}
 
-		this->shrink_to_fit();
-
 		//  normalize sum of all H to 1.0
-		Normalize();
+		this->normalize();
 	}
 
 	~WindowedSinc() = default;
 
-	using vector<T>::at;
-
-	//	For array operator, [0] points to the middle of the coefficients, and uses a signed index.
-	//	i: -Mo2 <= i <= Mo2
-	T operator[](int32_t i) { return this->data()[i + Mo2]; }
-
-	//	IF unsigned int is used then index from the beginning.
-	//  i: 0 <= i <= M
-	T operator[](uint32_t i) { return this->data()[i]; }
-
-	using vector<T>::operator[];
-	using vector<T>::front;
-	using vector<T>::back;
-	using vector<T>::begin;
-	using vector<T>::end;
-	using vector<T>::empty;
-	using vector<T>::size;
 
 	int32_t getM() { return M; }
 
 	int32_t getMo2() { return Mo2; }
 
-
-	/**  Apply gain to H.
-	 * -1 inverts.
-	 * "a" for alpha, the scalor
-	 * does nothing for 1.0, or unity gain
-	 */
-	void Gain(const T a)
-	{
-		if ( a != 1.0 ) {
-			for_each(this->begin(), this->end(), [&a](T &elem) { elem *= a; });
-		}
-	}
-
-
-	WindowedSinc &operator*=(const T &a)
-	{
-		for_each(this->begin(), this->end(), [&a](T &elem) { elem *= a; });
-		return *this;
-	}
+	void normalize() { this->normalize_sum(1.0);}
 
 
 	//  Applies window to H.
@@ -121,20 +120,20 @@ public:
 	{
 		for ( size_t i = 0; i <= M; i++ ) {
 			T twoPiIoM = twoPi * (i + 1) / (M + 2);
-			this->data()[i] *= (0.42 - (0.5 * cos(twoPiIoM)) + (0.08 * cos(2.0 * twoPiIoM)));
+			(*this)[i] *= (0.42 - (0.5 * cos(twoPiIoM)) + (0.08 * cos(2.0 * twoPiIoM)));
 		}
 
-		Normalize();
+		this->normalize();
 	}
 
 
 	void ApplyHamming()
 	{
 		for ( size_t i = 0; i <= M; i++ ) {
-			this->data()[i] *= (0.54 - (0.46 * cos(twoPi * i / M)));
+			(*this)[i] *= (0.54 - (0.46 * cos(twoPi * i / M)));
 		}
 
-		Normalize();
+		this->normalize();
 	}
 
 	//  TODO:
@@ -146,32 +145,24 @@ public:
 
 	void MakeLowCut()
 	{
-		Gain(-1.0);
-		this->data()[Mo2] += 1.0;
+		this->operator*=(-1); //  inverts kernal output
+		(*this)[Mo2] += 1.0;    //  makes kernal add in original value; making original minus low pass (high cut).
 	}
 
-
-	//  Return the sum of all members.
-	T sum() { return reduce(this->begin(), this->end(), (T) 0.0f); }
-
-	//  Like fmadd() (fused multiply add), this is fused multiply sum.
-	T fms(auto first2, int32_t n = 0)
+	//  Like fma() (fused multiply add), this is fused multiply sum.
+	//  n: 0 <= n <= M; or
+	//  n: 0 <= n < this->size()
+	//  TODO: TEST THIS
+	T fms(auto begin2, int32_t n = 0)
 	{
-		auto begin1 = this->begin(), last1 = this->end();
+		if ( abs(n) >= M ) throw runtime_error("'n' is too big");
 
-		if ( abs(n) > this->size() ) throw runtime_error("'n' is too big");
-
+		auto begin1 = this->begin(), end1 = this->end();
 		if ( n < 0 ) begin1 = this->end() + n;
-		if ( n > 0 ) last1  = this->begin() + n;
+		if ( n > 0 ) end1   = this->begin() + n;
 
-		return transform_reduce(begin1, last1, first2, 0.0f, plus<>(), multiplies<>());
+		return transform_reduce(begin1, end1, begin2, 0.0f, plus<>(), multiplies<>());
 	}
-
-
-private:
-
-	// Normalize then apply gain.
-	void Normalize() { Gain(1.0 / this->sum()); }
 
 };
 
