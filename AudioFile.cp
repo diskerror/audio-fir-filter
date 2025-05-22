@@ -548,23 +548,25 @@ void AudioFile::WriteSamples()
 
 	if ( this->bitsPerSample == 8 ) {
 		for ( s = 0; s < this->numSamples; ++s ) {
-			tempInt8[s] = (uint8_t)
-				              this->samples[s] + 127;
+			tempInt8[s] = (uint8_t) this->samples[s] + 127;
 		}
 	}
 	else {
+		dPtr = dataBlock;
 		switch ( this->dataEndianess ) {
 			case 'litl':
 				switch ( this->bitsPerSample ) {
 					case 16:
-						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
-							store_little_s16((unsigned char *) dPtr, (int16_t) this->samples[s]);
+						for ( auto & elem : this->samples ) {
+							store_little_s16(dPtr, (int16_t) elem);
+							dPtr += 2;
 						}
 						break;
 
 					case 24:
-						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
-							store_little_s24((unsigned char *) dPtr, (int32_t) this->samples[s]);
+						for ( auto & elem : this->samples ) {
+							store_little_s24(dPtr, (int32_t) elem);
+							dPtr += 3;
 						}
 						break;
 
@@ -587,21 +589,24 @@ void AudioFile::WriteSamples()
 			case 'big ':
 				switch ( this->bitsPerSample ) {
 					case 16:
-						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 2 ) {
-							store_big_s16(dPtr, (int16_t) this->samples[s]);
+						for ( auto & elem : this->samples ) {
+							store_big_s16(dPtr, (int16_t) elem);
+							dPtr += 2;
 						}
 						break;
 
 					case 24:
-						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 3 ) {
-							store_big_s24(dPtr, (int32_t) this->samples[s]);
+						for ( auto & elem : this->samples ) {
+							store_big_s24(dPtr, (int32_t) elem);
+							dPtr += 3;
 						}
 						break;
 
 					case 32:
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-						for ( s = 0, dPtr = dataBlock; s < this->numSamples; ++s, dPtr += 4 ) {
-							AudioFile::ReverseCopy4Bytes(dPtr, (unsigned char *) &this->samples[s]);
+						for ( auto & elem : this->samples ) {
+							AudioFile::ReverseCopy4Bytes(dPtr, (unsigned char *) &elem);
+							dPtr += 4;
 						}
 #else   //  __ORDER_BIG_ENDIAN__
 						delete dataBlock;
