@@ -90,20 +90,6 @@ public:
 		(*this) *= (max_possible / this->max_mag());
 	}
 
-	//  This applies a random number with values from -1.0 to 1.0 in triangular distribution.
-	//  This is most useful to apply to elements just before converting floating point values to integer values.
-	void dither()
-	{
-		static std::random_device                rd;
-		static std::mt19937                      gen(rd());
-		static std::uniform_real_distribution<T> low(-1, 0);
-		static std::uniform_real_distribution<T> hi(0, 1);
-
-		//  We can't simply use "*this += (low(gen) + hi(gen));"
-		//  because we need "(low(gen) + hi(gen))" to return a different value for each sample.
-		for ( T & elem : *this ) elem += (low(gen) + hi(gen));
-	}
-
 };
 
 } //	Diskerror
