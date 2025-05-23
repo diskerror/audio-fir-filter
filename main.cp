@@ -15,6 +15,7 @@ using namespace std;
 using namespace boost;
 
 #include "AudioFile.h"
+#include "ProgressBar.h"
 #include "VectorMath.h"
 #include "WindowedSinc.h"
 
@@ -22,7 +23,7 @@ using namespace boost;
 #define TEMP_FREQ  15
 #define TEMP_SLOPE 10
 
-#define PROGRESS_WIDTH 80.0
+#define PROGRESS_WIDTH 80
 
 void status(bool verbose, string s)
 {
@@ -113,8 +114,8 @@ int main(int argc, char **argv)
 		for ( uint32_t a = optind; a < argc; a++ ) {
 			//	open and read file
 			auto audioFile = Diskerror::AudioFile(filesystem::path(argv[a]));
-			status(verbose, "Opening and reading:");
-			status(verbose, audioFile.file.filename());
+			cout << "Processing file: " << audioFile.file.filename() << endl;
+			status(verbose, "Opening and reading");
 			audioFile.ReadSamples();
 
 			//	create windowed sinc kernal
@@ -129,12 +130,8 @@ int main(int argc, char **argv)
 			Diskerror::VectorMath<float32_t>
 				tempOutput(audioFile.GetNumSamples());
 
-			uint64_t  progressCount = 0;
-			float32_t progress;
-			uint16_t  progressPos;
-
-			cout << fixed << setprecision(1) << flush;
-			cout << "Processing file: " << audioFile.file.filename() << endl;
+			Diskerror::ProgressBar
+				progressBar(PROGRESS_WIDTH, (float) audioFile.GetNumSamples(), 7919);
 
 			//	for each channel in frame
 			for ( uint16_t chan = 0; chan < audioFile.GetNumChannels(); chan++ ) {
@@ -155,21 +152,11 @@ int main(int argc, char **argv)
 					//	tempOutput[s][chan] = acc
 					tempOutput[s] = (float32_t) acc;
 
-					//	progress bar, do only every x samples
-					if ( progressCount % 7919 == 0 ) {
-						progress    = (float32_t) progressCount / (float32_t) audioFile.GetNumSamples();
-						progressPos = (uint16_t) round((float32_t) PROGRESS_WIDTH * progress);
-
-						cout << "\r" << "["
-						     << string(progressPos, '=') << ">" << string(PROGRESS_WIDTH - progressPos, ' ')
-						     << "] " << (progress * 100) + 0.05 << " %  " << flush;
-					}
-					progressCount++;
+					progressBar.Update();
 				}    //	End loop over samples.
 			}    //	End loop over channels.
 
-			cout << "\r" << "[" << string(PROGRESS_WIDTH + 1, '=') << "] 100.0 %        " << endl;
-			cout.flush();
+			progressBar.Final();
 
 			//	copy result back to our original file
 			status(verbose, (string) "Copying data back to file's sample buffer.");

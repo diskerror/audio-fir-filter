@@ -34,8 +34,8 @@ class WindowedSinc : public VectorMath<T> {
 
 	const T twoPi = 2.0 * numbers::pi_v<T>;
 
-	int32_t M   = 0;
-	int32_t Mo2 = 0;  //	M / 2, or midpoint of size, which is always a positive odd number
+	uint32_t M   = 0;
+	uint32_t Mo2 = 0;  //	M / 2, or midpoint of size, which is always a positive odd number
 
 	//  Prevent usage of these.
 	using VectorMath<T>::operator=;
