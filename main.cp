@@ -102,11 +102,11 @@ int main(int argc, char **argv)
 		//  Check for input parameter.
 		if ( optind >= argc || help ) {
 			cout << "Applies low-cut (high-pass) FIR filter to WAVE or AIFF file." << endl;
-			cout << "    -f, --frequency <Hz>         Filter cutoff frequency." << endl;
-			cout << "    -s, --slope <Hz>             Filter slope." << endl;
-			cout << "    -n, --normalize              Normalize output to maximum bit depth for PCM files." << endl;
-			cout << "    -v, --verbose                Verbose output." << endl;
-			cout << "    -h, --help                   Display this help message." << endl;
+			cout << "    -f, --frequency <Hz>   Filter cutoff frequency." << endl;
+			cout << "    -s, --slope <Hz>       Filter slope." << endl;
+			cout << "    -n, --normalize        Normalize output to maximum bit depth for PCM files." << endl;
+			cout << "    -v, --verbose          Verbose output." << endl;
+			cout << "    -h, --help             Display this help message." << endl;
 			return exitVal;
 		}
 
