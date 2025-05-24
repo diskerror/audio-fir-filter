@@ -25,8 +25,8 @@ class ProgressBar {
 
 public:
 
-	ProgressBar(const unsigned short bar_width, const float goal, const unsigned short interval) :
-		bar_width(bar_width), goal(goal), interval(interval)
+	ProgressBar(const float goal, const unsigned short interval, const unsigned short bar_width = 80) :
+		goal(goal), interval(interval), bar_width(bar_width)
 	{
 		cout << fixed << setprecision(1) << flush;
 	}

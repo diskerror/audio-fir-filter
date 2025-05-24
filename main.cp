@@ -23,8 +23,6 @@ using namespace boost;
 #define TEMP_FREQ  15
 #define TEMP_SLOPE 10
 
-#define PROGRESS_WIDTH 80
-
 void status(bool verbose, string s)
 {
 	if ( verbose ) cout << s << endl;
@@ -125,13 +123,13 @@ int main(int argc, char **argv)
 			sinc.ApplyBlackman();
 			sinc.MakeLowCut();
 
-			//	define temporary output buffer[samps][chan],
+			//	define temporary output buffer[chan][samps],
 			status(verbose, (string) "Creating temporary buffer.");
 			Diskerror::VectorMath<float32_t>
 				tempOutput(audioFile.GetNumSamples());
 
 			Diskerror::ProgressBar
-				progressBar(PROGRESS_WIDTH, (float) audioFile.GetNumSamples(), 7919);
+				progressBar((float) audioFile.GetNumSamples(), 7919);
 
 			//	for each channel in frame
 			for ( uint16_t chan = 0; chan < audioFile.GetNumChannels(); chan++ ) {
@@ -160,7 +158,7 @@ int main(int argc, char **argv)
 
 			//	copy result back to our original file
 			status(verbose, (string) "Copying data back to file's sample buffer.");
-			for ( uint_fast64_t s = 0; s < audioFile.GetNumSamples(); ++s ) audioFile.samples[s] = tempOutput[s];
+			copy(tempOutput.begin(), tempOutput.end(), audioFile.samples.begin());
 			tempOutput.resize(0);
 
 			//	Normalize if new sample stream goes over maximum sample size.

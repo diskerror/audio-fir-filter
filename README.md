@@ -8,11 +8,11 @@ This project also includes Microsoft and Apple headers, WAVE and AIFF, with an e
 
 ## Cross Platform
 
-The Wave.h header file uses the Boost endianess file so it is anticipated that this program can be compiled on platforms with different endianess and maintain the proper WAVE and AIFF byte order.
+The Wave.h header file uses the Boost endianess file so it is anticipated that this program can be compiled on platforms with different endianess and maintain the proper WAVE and AIFF byte order. I have an afinity for big-endian as I learned to code on the Motorola 68K and PowerPC processors.
 
 ## Original Build
 
-This was originall built and working on a 2023 Mac Studio with an Apple M2 Max chip and running MacOS 15.4 (Sequoia). The Boost library was installed with [
+This was originall built and working on a 2023 Mac Studio with an Apple M2 Max chip and running MacOS 15.5 (Sequoia). The Boost library was installed with [
 **Mac Ports**](https://www.macports.org).
 
 # Acknowlegement
