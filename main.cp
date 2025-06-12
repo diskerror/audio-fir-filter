@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <getopt.h>
 #include <iostream>
 #include <stdexcept>
@@ -22,11 +23,6 @@ using namespace boost;
 //	Default values.
 #define TEMP_FREQ  15
 #define TEMP_SLOPE 10
-
-void status(bool verbose, string s)
-{
-	if ( verbose ) cout << s << endl;
-}
 
 
 int main(int argc, char **argv)
@@ -101,30 +97,34 @@ int main(int argc, char **argv)
 		if ( optind >= argc || help ) {
 			cout << "Applies low-cut (high-pass) FIR filter to WAVE or AIFF file." << endl;
 			cout << "    -f, --frequency <Hz>   Filter cutoff frequency." << endl;
-			cout << "    -s, --slope <Hz>       Filter slope." << endl;
+			cout << "    -s, --slope <Hz>       Filter slope width." << endl;
 			cout << "    -n, --normalize        Normalize output to maximum bit depth for PCM files." << endl;
 			cout << "    -v, --verbose          Verbose output." << endl;
 			cout << "    -h, --help             Display this help message." << endl;
 			return exitVal;
 		}
 
+		// Show status when verbose is true.
+		std::function<void(string const &)> showStatus = [](string const & s) { return; };
+		if ( verbose ) showStatus = [](string const& s) { cout << s << endl; };
+
 		//  Loop over file names.
 		for ( uint32_t a = optind; a < argc; a++ ) {
 			//	open and read file
 			auto audioFile = Diskerror::AudioFile(filesystem::path(argv[a]));
 			cout << "Processing file: " << audioFile.file.filename() << endl;
-			status(verbose, "Opening and reading");
+			showStatus("Opening and reading");
 			audioFile.ReadSamples();
 
 			//	create windowed sinc kernal
-			status(verbose, (string) "Creating sinc kernal for this file's sample rate.");
+			showStatus("Creating sinc kernal for this file's sample rate.");
 			Diskerror::WindowedSinc<long double>
 				sinc(freq / audioFile.GetSampleRate(), slope / audioFile.GetSampleRate());
 			sinc.ApplyBlackman();
 			sinc.MakeLowCut();
 
 			//	define temporary output buffer[chan][samps],
-			status(verbose, (string) "Creating temporary buffer.");
+			showStatus("Creating temporary buffer.");
 			Diskerror::VectorMath<float32_t>
 				tempOutput(audioFile.GetNumSamples());
 
@@ -157,21 +157,21 @@ int main(int argc, char **argv)
 			progressBar.Final();
 
 			//	copy result back to our original file
-			status(verbose, (string) "Copying data back to file's sample buffer.");
+			showStatus("Copying data back to file's sample buffer.");
 			copy(tempOutput.begin(), tempOutput.end(), audioFile.samples.begin());
 			tempOutput.resize(0);
 
 			//	Normalize if new sample stream goes over maximum sample size.
 			//  A DC offset in one direction may cause overflow in the other direction when removed.
 			if ( audioFile.samples.max_mag() > audioFile.GetSampleMaxMagnitude() || normalize ) {
-				status(verbose, (string) "Doing audio normalize.");
+				showStatus("Doing audio normalize.");
 				audioFile.Normalize();
 			}
 
-			status(verbose, (string) "Converting and writing samples back to file.");
+			showStatus("Converting and writing samples back to file.");
 			audioFile.WriteSamples();
 
-			status(verbose, "");
+			showStatus("");
 		} //  End loop over file names.
 	} // End try
 	catch ( const std::exception & e ) {

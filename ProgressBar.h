@@ -17,9 +17,9 @@ using namespace std;
 
 class ProgressBar {
 
-	const unsigned short bar_width;
 	const float          goal;
 	const unsigned short interval;
+	const unsigned short bar_width;
 
 	unsigned long long step = 0;
 
