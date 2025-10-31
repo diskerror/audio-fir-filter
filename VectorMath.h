@@ -21,77 +21,65 @@
 #include <vector>
 
 namespace Diskerror {
-
-
 /**
  * Adds math functions to std::vector<> like valarray.
  * This will focus on the way I've always wanted to process off-line audio data.
  * @tparam T
  */
-template<typename T>
+template <typename T>
 class VectorMath : public std::vector<T> {
-
 public:
-
 	VectorMath() = default;
 
 	explicit VectorMath(uint64_t count) : std::vector<T>(count) {}
 
 	~VectorMath() = default;
 
-	VectorMath & operator*=(const T & a)
-	{
-		for ( T & elem : *this ) elem *= a;
+	VectorMath& operator*=(const T& a) {
+		for (T& elem : *this) elem *= a;
 		return *this;
 	}
 
-	VectorMath & operator/=(const T & a)
-	{
-		for ( T & elem : *this ) elem /= a;
+	VectorMath& operator/=(const T& a) {
+		for (T& elem : *this) elem /= a;
 		return *this;
 	}
 
-	T sum() { return reduce(this->begin(), this->end(), (T) 0.0); }
+	T sum() { return reduce(this->begin(), this->end(), 0.0); }
 
-	T average() { return this->sum() / (T) this->size(); }
+	T average() { return this->sum() / this->size(); }
 
-	T max()
-	{
+	T max() {
 		auto val = std::numeric_limits<T>::lowest();
-		for ( T & elem : *this ) if ( elem > val ) val = elem;
+		for (T& elem : *this) if (elem > val) val = elem;
 		return val;
 	}
 
-	T min()
-	{
+	T min() {
 		auto val = std::numeric_limits<T>::max();
-		for ( T & elem : *this ) if ( elem < val ) val = elem;
+		for (T& elem : *this) if (elem < val) val = elem;
 		return val;
 	}
 
 	//  Maximum magitude.
-	T max_mag()
-	{
-		auto    max_mag_val = (T) 0;
-		for ( T elem : *this ) { //  do not reference elem
-			if ( elem < 0 ) elem                  = -elem;
-			if ( elem > max_mag_val ) max_mag_val = elem;
+	T max_mag() {
+		T max_mag_val = 0;
+		for (T elem : *this) {
+			//  do not reference elem
+			if (elem < 0) elem = -elem;
+			if (elem > max_mag_val) max_mag_val = elem;
 		}
 		return max_mag_val;
 	}
 
-	void normalize_sum(const T max_possible)
-	{
-		(*this) *= (max_possible / this->sum());
+	void normalize_sum(const T max_possible) {
+		*this *= max_possible / this->sum();
 	}
 
-	void normalize_mag(const T max_possible)
-	{
-		(*this) *= (max_possible / this->max_mag());
+	void normalize_mag(const T max_possible) {
+		*this *= max_possible / this->max_mag();
 	}
-
 };
-
 } //	Diskerror
 
 #endif // DISKERROR_VECTORMATH_H
