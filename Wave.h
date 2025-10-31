@@ -87,7 +87,7 @@ typedef struct FormatPlusData : FormatData {
 //   unsigned short Data3;
 //   unsigned char  Data4[8];
 // } GUID;
-typedef struct _GUID {
+typedef struct GUID {
   little_uint32_t	Data1;
   little_uint16_t	Data2;
   little_uint16_t	Data3;
@@ -118,7 +118,7 @@ typedef struct FormatExtensibleData : FormatPlusData {
 } FormatExtensibleData_t;
 
 //	Describes Broadcast Audio Extension data structure.
-//		id = 'best'
+//		id = 'bext'
 //		size >= 602
 typedef struct BroadcastAudioExtension {
     char Description[256];          // ASCII : Description of the sound sequence

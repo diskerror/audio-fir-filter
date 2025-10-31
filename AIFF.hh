@@ -51,7 +51,7 @@ enum {
 
 enum {
     /* AIFF-C Versions */
-  AIFCVersion1                  = (uint32_t)0xA2805140
+  AIFCVersion1                  = 0xA2805140
 };
 
 /* Compression Names */
