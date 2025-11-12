@@ -383,12 +383,6 @@
 //   unsigned short Data3;
 //   unsigned char  Data4[8];
 // } GUID;
-// typedef struct _GUID {
-//   little_uint32_t	Data1;
-//   little_uint16_t	Data2;
-//   little_uint16_t	Data3;
-//   unsigned char		Data4[8];
-// } GUID;
 // // For a WAVE_FORMAT_X tag = 0xXYZW the WAVEFORMATEXTENSIBLE SubType GUID is
 // // 0000XYZW-0000-0010-8000-00AA00389B71
 // #define DEFINE_WAVEFORMATEX_GUID(x) (USHORT)(x), 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71

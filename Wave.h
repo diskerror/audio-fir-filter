@@ -62,7 +62,7 @@ struct ChunkID {
 //	Format data structure.
 //	Chunk data with type 'fmt ' and size 16 will have this structure.
 typedef struct FormatData {
-    little_uint16_t type;              // WAVE_FORMAT_PCM = 0x0001, etc.
+    little_uint16_t type;              // WAVE_FORMAT_PCM = 0x0001, WAVE_FORMAT_IEEE_FLOAT = 0x0003 etc.
     little_uint16_t channelCount;      // 1 = mono, 2 = stereo, etc.
     little_uint32_t sampleRate;        // 32000, 44100, 48000, etc.
     little_uint32_t bytesPerSecond;    // average, only important for compressed formats
@@ -72,7 +72,7 @@ typedef struct FormatData {
 
 //	Chunk data with type 'fmt ' and size 18 will have this structure.
 typedef struct FormatPlusData : FormatData {
-//	little_uint16_t type;              // WAVE_FORMAT_PCM = 0x0001, etc.
+//	little_uint16_t type;              // WAVE_FORMAT_PCM = 0x0001, WAVE_FORMAT_IEEE_FLOAT = 0x0003 etc.
 //	little_uint16_t channelCount;      // 1 = mono, 2 = stereo, etc.
 //	little_uint32_t sampleRate;        // 32000, 44100, 48000, etc.
 //	little_uint32_t bytesPerSecond;    // average, only important for compressed formats
@@ -101,7 +101,7 @@ typedef struct GUID {
 
 //	Chunk data with type 'fmt ' and size 40 will have this structure.
 typedef struct FormatExtensibleData : FormatPlusData {
-//	little_uint16_t type;              // WAVE_FORMAT_PCM = 0x0001, etc.
+//	little_uint16_t type;              // WAVE_FORMAT_PCM = 0x0001, WAVE_FORMAT_IEEE_FLOAT = 0x0003 etc..
 //	little_uint16_t channelCount;      // 1 = mono, 2 = stereo, etc.
 //	little_uint32_t sampleRate;        // 32000, 44100, 48000, etc.
 //	little_uint32_t bytesPerSecond;    // average, only important for compressed formats
