@@ -8,6 +8,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <vector>
 
 #include <boost/cstdfloat.hpp>
 #include <boost/endian/arithmetic.hpp>
@@ -56,37 +57,37 @@ typedef union {
 		char rawData[];
 	};
 
-	fmt_t  fmt_; //	WAVE format
-	COMM_t COMM; //	AIFF format
-
-//	additional AIFF chunks
-	//	minf.size==16?
-	SSND_t     SSND;
-	aChunk_t   elm1; //	elm1.size==426, filler like JUNK?
-	MARK_t     MARK;
-	INST_t     INST;
-	aiffData_t MIDI;
-	aiffData_t AESD;
-	APPL_t     APPL;
-	COMT_t     COMT;
-	text_t     NAME;
-	text_t     AUTH;
-	text_t     copy;
-	text_t     ANNO;
-	SAXL_t     SAXL;
-
-//	additional WAVE chunks
-	waveData_t data;
-	ds64_t     ds64;
-	waveData_t JUNK;
-	bext_t     bext;
-	big1_t     big1;
-	fact_t     fact;
-	cue_t      cue_;
-	plst_t     plst;
-	listHead_t list;
-	smpl_t     smpl;
-	inst_t     inst;
+// 	fmt_t  fmt_; //	WAVE format
+// 	COMM_t COMM; //	AIFF format
+//
+// //	additional AIFF chunks
+// 	//	minf.size==16?
+// 	SSND_t     SSND;
+// 	aChunk_t   elm1; //	elm1.size==426, filler like JUNK?
+// 	MARK_t     MARK;
+// 	INST_t     INST;
+// 	aiffData_t MIDI;
+// 	aiffData_t AESD;
+// 	APPL_t     APPL;
+// 	COMT_t     COMT;
+// 	text_t     NAME;
+// 	text_t     AUTH;
+// 	text_t     copy;
+// 	text_t     ANNO;
+// 	SAXL_t     SAXL;
+//
+// //	additional WAVE chunks
+// 	waveData_t data;
+// 	ds64_t     ds64;
+// 	waveData_t JUNK;
+// 	bext_t     bext;
+// 	big1_t     big1;
+// 	fact_t     fact;
+// 	cue_t      cue_;
+// 	plst_t     plst;
+// 	listHead_t list;
+// 	smpl_t     smpl;
+// 	inst_t     inst;
 } chunks_t;
 
 class chunkVector : public vector<chunks_t*> {
