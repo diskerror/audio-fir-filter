@@ -185,7 +185,7 @@ void AudioSamples::ReadSamples() {
 //	Assumes data will be the same size as the buffer that was read.
 void AudioSamples::WriteSamples(const bool do_dither) {
     this->assertDataFormat();
-    auto dataBlock = static_cast<unsigned char*>(calloc(this->dataBlockSize, 1));
+    auto dataBlock = static_cast<unsigned char*>(calloc(this->dataSize, 1));
 
     uint_fast64_t  s; //	Index variable for samples.
     unsigned char* dPtr;

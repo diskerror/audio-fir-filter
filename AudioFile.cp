@@ -55,7 +55,7 @@ typedef struct {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-AudioFile::AudioFile(const filesystem::path& fPath) : file(fPath) {
+AudioFile::AudioFile(const filesystem::path& fPath) : filePath(fPath) {
     mediaHeader_t header;
     header.baseID  = 0;
     header.size.le = 0;
@@ -63,13 +63,13 @@ AudioFile::AudioFile(const filesystem::path& fPath) : file(fPath) {
 
     if (!filesystem::is_regular_file(fPath)) throw runtime_error("Not a regular file.");
 
-    this->fileStm.open(this->file.string(), ios_base::in | ios_base::out | ios_base::binary);
-    if (this->fileStm.fail()) {
+    this->fileAccess.open(this->filePath.string(), ios_base::in | ios_base::out | ios_base::binary);
+    if (this->fileAccess.fail()) {
         throw invalid_argument("There was a problem opening the input file.");
     }
 
     //	Audio files always have a 12 byte header.
-    this->fileStm.read(reinterpret_cast<char*>(&header), sizeof(header));
+    this->fileAccess.read(reinterpret_cast<char*>(&header), sizeof(header));
     this->fileType    = header.baseID;
     this->fileSubType = header.type;
     switch (this->fileType) {
@@ -120,34 +120,34 @@ void AudioFile::openRIFF() {
         chunkExam.id      = 0;
         chunkExam.size.le = 0;
 
-        this->fileStm.read(reinterpret_cast<char*>(&chunkExam), 8);
+        this->fileAccess.read(reinterpret_cast<char*>(&chunkExam), 8);
 
         switch (chunkExam.id) {
             case 'fmt ':
-                this->fileStm.read(reinterpret_cast<char*>(&format), sizeof(format));
+                this->fileAccess.read(reinterpret_cast<char*>(&format), sizeof(format));
 
                 //	skip over remainder, if any
-                this->fileStm.seekg(chunkExam.size.le - sizeof(format), ios_base::cur);
+                this->fileAccess.seekg(chunkExam.size.le - sizeof(format), ios_base::cur);
                 break;
 
             case 'data':
-                this->dataBlockSize = chunkExam.size.le;
-                this->dataBlockStart = this->fileStm.tellg();
+                this->dataSize = chunkExam.size.le;
+                this->dataStart = this->fileAccess.tellg();
             //	fall through
 
             // skip over other chunks.
             default:
-                this->fileStm.seekg(chunkExam.size.le, ios_base::cur);
+                this->fileAccess.seekg(chunkExam.size.le, ios_base::cur);
                 break;
         }
     }
-    while (this->fileStm.good());
+    while (this->fileAccess.good());
 
     this->dataType      = 'ms  ' & static_cast<big_uint32_t>(format.type);
     this->sampleRate    = format.sampleRate;
     this->bitsPerSample = static_cast<uint16_t>(ceil(format.bitsPerSample / 8.0)) * 8;
     this->numChannels   = format.channelCount;
-    this->numSamples    = this->dataBlockSize / (this->bitsPerSample / 8);
+    this->numSamples    = this->dataSize / (this->bitsPerSample / 8);
 
     //  Always little endian for RIFF
     this->dataEndianess = 'litl';
@@ -179,40 +179,40 @@ void AudioFile::openRF64() {
         chunkExam.id      = 0;
         chunkExam.size.le = 0; //	little endian
 
-        this->fileStm.read(reinterpret_cast<char*>(&chunkExam), 8);
+        this->fileAccess.read(reinterpret_cast<char*>(&chunkExam), 8);
 
         switch (chunkExam.id) {
             case 'fmt ':
-                this->fileStm.read(reinterpret_cast<char*>(&format), sizeof(format));
+                this->fileAccess.read(reinterpret_cast<char*>(&format), sizeof(format));
 
                 //	skip over remainder, if any
-                this->fileStm.seekg(chunkExam.size.le - sizeof(format), ios_base::cur);
+                this->fileAccess.seekg(chunkExam.size.le - sizeof(format), ios_base::cur);
                 break;
 
             case 'ds64':
-                this->fileStm.read(reinterpret_cast<char*>(&ds64), sizeof(ds64));
-                this->dataBlockSize = ds64.dataSize;
+                this->fileAccess.read(reinterpret_cast<char*>(&ds64), sizeof(ds64));
+                this->dataSize = ds64.dataSize;
 
                 //	skip over remainder, if any
-                this->fileStm.seekg(chunkExam.size.le - sizeof(ds64), ios_base::cur);
+                this->fileAccess.seekg(chunkExam.size.le - sizeof(ds64), ios_base::cur);
                 break;
 
             case 'data':
-                if (this->dataBlockSize == 0) {
+                if (this->dataSize == 0) {
                     throw runtime_error("The 'ds64' chunk must come before the 'data' chunk.");
                 }
 
-                this->dataBlockStart = this->fileStm.tellg();
-                this->fileStm.seekg(this->dataBlockSize, ios_base::cur);
+                this->dataStart = this->fileAccess.tellg();
+                this->fileAccess.seekg(this->dataSize, ios_base::cur);
                 break;
 
             // skip over other chunks.
             default:
-                this->fileStm.seekg(chunkExam.size.le, ios_base::cur);
+                this->fileAccess.seekg(chunkExam.size.le, ios_base::cur);
                 break;
         }
     }
-    while (!this->fileStm);
+    while (!this->fileAccess);
 
     this->dataType      = 'ms  ' & static_cast<big_uint32_t>(format.type);
     this->sampleRate    = format.sampleRate;
@@ -234,7 +234,7 @@ void AudioFile::openRF64() {
             break;
     }
 
-    this->numSamples = this->dataBlockSize / (this->bitsPerSample / 8);
+    this->numSamples = this->dataSize / (this->bitsPerSample / 8);
 }
 
 
@@ -249,35 +249,35 @@ void AudioFile::openAIFF() {
         chunkExam.id      = 0;
         chunkExam.size.be = 0; //	big endian
 
-        this->fileStm.read(reinterpret_cast<char*>(&chunkExam), sizeof(chunkExam));
+        this->fileAccess.read(reinterpret_cast<char*>(&chunkExam), sizeof(chunkExam));
 
         switch (chunkExam.id) {
             case 'COMM':
-                this->fileStm.read(reinterpret_cast<char*>(&format), sizeof(format));
+                this->fileAccess.read(reinterpret_cast<char*>(&format), sizeof(format));
                 this->sampleRate    = static_cast<uint16_t>(bigExt80ToNativeLongDouble(format.sampleRate));
                 this->bitsPerSample = static_cast<uint16_t>(ceil(format.sampleSize / 8) * 8);
                 this->numChannels   = format.numChannels;
                 this->numSamples    = this->numChannels * format.numSampleFrames;
-                this->dataBlockSize = static_cast<int64_t>(this->numSamples * (this->bitsPerSample / 8));
+                this->dataSize = static_cast<int64_t>(this->numSamples * (this->bitsPerSample / 8));
                 break;
 
             case 'SSND':
-                this->fileStm.read(reinterpret_cast<char*>(&ssndChunk), 8);
+                this->fileAccess.read(reinterpret_cast<char*>(&ssndChunk), 8);
                 if (ssndChunk.offset != 0 && ssndChunk.blockSize != 0) {
                     throw runtime_error(
                         "Can't handle files with SSND.offset or SSND.blockSize set to other than zero.");
                 }
-                this->dataBlockStart = this->fileStm.tellg();
-                this->fileStm.seekg(chunkExam.size.be - 8, ios_base::cur);
+                this->dataStart = this->fileAccess.tellg();
+                this->fileAccess.seekg(chunkExam.size.be - 8, ios_base::cur);
                 break;
 
             // skip over other chunks.
             default:
-                this->fileStm.seekg(chunkExam.size.be, ios_base::cur);
+                this->fileAccess.seekg(chunkExam.size.be, ios_base::cur);
                 break;
         }
     }
-    while (this->fileStm.good());
+    while (this->fileAccess.good());
 
     this->dataType = 'NONE';
     //  AIFF files are always big endian and PCM integer
@@ -297,37 +297,37 @@ void AudioFile::openAIFC() {
         chunkExam.id      = 0;
         chunkExam.size.be = 0; //	big endian
 
-        this->fileStm.read(reinterpret_cast<char*>(&chunkExam), 8);
+        this->fileAccess.read(reinterpret_cast<char*>(&chunkExam), 8);
 
         switch (chunkExam.id) {
             case 'COMM': //  Extended Common Chunk
-                this->fileStm.read(reinterpret_cast<char*>(&format), sizeof(format));
-                this->fileStm.seekg(chunkExam.size.be - sizeof(format), ios_base::cur);
+                this->fileAccess.read(reinterpret_cast<char*>(&format), sizeof(format));
+                this->fileAccess.seekg(chunkExam.size.be - sizeof(format), ios_base::cur);
                 break;
 
             case 'SSND':
-                this->fileStm.read(reinterpret_cast<char*>(&ssndChunk), 8);
+                this->fileAccess.read(reinterpret_cast<char*>(&ssndChunk), 8);
                 if (ssndChunk.offset != 0 && ssndChunk.blockSize != 0) {
                     throw runtime_error(
                         "Can't handle files with SSND.offset or SSND.blockSize set to other than zero.");
                 }
-                this->dataBlockStart = this->fileStm.tellg();
-                this->fileStm.seekg(chunkExam.size.be - 8, ios_base::cur);
+                this->dataStart = this->fileAccess.tellg();
+                this->fileAccess.seekg(chunkExam.size.be - 8, ios_base::cur);
                 break;
 
             // skip over other chunks.
             default:
-                this->fileStm.seekg(chunkExam.size.be, ios_base::cur);
+                this->fileAccess.seekg(chunkExam.size.be, ios_base::cur);
                 break;
         }
     }
-    while (this->fileStm.good());
+    while (this->fileAccess.good());
 
     this->sampleRate    = static_cast<uint16_t>(bigExt80ToNativeLongDouble(format.sampleRate));
     this->bitsPerSample = static_cast<uint16_t>(ceil(format.sampleSize / 8.0)) * 8;
     this->numChannels   = format.numChannels;
     this->numSamples    = this->numChannels * format.numSampleFrames;
-    this->dataBlockSize = this->numSamples * (this->bitsPerSample / 8);
+    this->dataSize = this->numSamples * (this->bitsPerSample / 8);
 
     switch (format.compressionType) {
         case 'NONE':
@@ -357,7 +357,7 @@ void AudioFile::openAIFC() {
 
 
 //	Maximum value storable == 2^(nBits-1) - 1
-float32_t AudioFile::getSampleMaxMagnitude() const {
+float64_t AudioFile::getSampleMaxMagnitude() const {
     //	if ( dataEncoding != 'PCM ' ) throw logic_error("Only PCM sammples have a maximum magnitude.");
     switch (this->getBitsPerSample()) {
         case 8:
@@ -380,17 +380,17 @@ float32_t AudioFile::getSampleMaxMagnitude() const {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 unsigned char* AudioFile::ReadAllData() {
-    const auto data = static_cast<unsigned char*>(calloc(this->dataBlockSize + 8, 1));
-    this->fileStm.clear();
-    this->fileStm.seekg(this->dataBlockStart);
-    this->fileStm.read(reinterpret_cast<char*>(data), this->dataBlockSize);
+    const auto data = static_cast<unsigned char*>(calloc(this->dataSize + 8, 1));
+    this->fileAccess.clear();
+    this->fileAccess.seekg(this->dataStart);
+    this->fileAccess.read(reinterpret_cast<char*>(data), this->dataSize);
     return data;
 }
 
 
 void AudioFile::WriteAllData(const unsigned char*data) {
-    this->fileStm.clear();
-    this->fileStm.seekp(this->dataBlockStart);
-    this->fileStm.write(reinterpret_cast<const char*>(data), this->dataBlockSize);
+    this->fileAccess.clear();
+    this->fileAccess.seekp(this->dataStart);
+    this->fileAccess.write(reinterpret_cast<const char*>(data), this->dataSize);
 }
 } //  namespace Diskerror

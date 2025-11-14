@@ -117,7 +117,7 @@ int main(const int argc, char**argv) {
 		for (uint32_t a = optind; a < argc; a++) {
 			//	open and read file
 			auto audioFile = Diskerror::AudioSamples(filesystem::path(argv[a]));
-			cout << "Processing file: " << audioFile.file.filename() << endl;
+			cout << "Processing file: " << audioFile.filePath.filename() << endl;
 			showStatus("Opening and reading");
 			audioFile.ReadSamples();
 
