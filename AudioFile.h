@@ -30,18 +30,18 @@ class AudioFile {
 
 protected:
 	// These properties are used as four character codes.
-	big_uint32_t fileType      = 0x00000000; // RIFF, RF64, FORM
-	big_uint32_t fileSubType   = 0x00000000; // WAVE, AIFF, AIFC
-	big_uint32_t dataEncoding  = 0x00000000; // 'PCM ' integers, 'IEEE' floats
-	big_uint32_t dataEndianess = 0x00000000; // 'big ' or 'litl'
+	fourcc_t fileType      = 0x00000000; // RIFF, RF64, FORM
+	fourcc_t fileSubType   = 0x00000000; // WAVE, AIFF, AIFC
+	fourcc_t dataEncoding  = 0x00000000; // 'PCM ' integers, 'IEEE' floats
+	fourcc_t dataEndianess = 0x00000000; // 'big ' or 'litl'
 
-	big_uint32_t dataType       = 0x00000000;
-	uint16_t     numChannels    = 0;
-	uint32_t     sampleRate     = 0;
-	uint16_t     bitsPerSample  = 0;
-	int64_t      numSamples     = 0;
-	int64_t      dataBlockStart = 0;
-	int64_t      dataBlockSize  = 0;
+	fourcc_t dataType       = 0x00000000;
+	uint16_t numChannels    = 0;
+	uint32_t sampleRate     = 0;
+	uint16_t bitsPerSample  = 0;
+	int64_t  numSamples     = 0;
+	int64_t  dataBlockStart = 0;
+	int64_t  dataBlockSize  = 0;
 
 	void openRIFF(); //	RIFF/WAVE < 4G
 	void openRF64(); //	RF64/WAVE > 4G
