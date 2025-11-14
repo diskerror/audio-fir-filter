@@ -124,19 +124,19 @@ int main(const int argc, char**argv) {
 			//	create windowed sinc kernal
 			showStatus("Creating sinc kernal for this file's sample rate.");
 			Diskerror::WindowedSinc<long double>
-					sinc(freq / audioFile.GetSampleRate(), slope / audioFile.GetSampleRate());
+					sinc(freq / audioFile.getSampleRate(), slope / audioFile.getSampleRate());
 			sinc.ApplyBlackman();
 			sinc.MakeLowCut();
 
 			//	define temporary output buffer[chan][samps],
 			showStatus("Creating temporary buffer.");
 			Diskerror::VectorMath<float32_t>
-					tempOutput(audioFile.GetNumSamples());
+					tempOutput(audioFile.getNumFrames());
 
 			Diskerror::ProgressBar
-					progressBar(static_cast<float>(audioFile.GetNumSamples()), 7919);
+					progressBar(static_cast<float>(audioFile.getNumFrames()), 7919);
 
-			for (uint16_t channel = 0; channel < audioFile.GetNumChannels(); channel++) {
+			for (uint16_t channel = 0; channel < audioFile.getNumChannels(); channel++) {
 				ApplyFIRFilterToChannel(audioFile, sinc, tempOutput, channel, progressBar);
 			}
 
@@ -176,8 +176,8 @@ void ApplyFIRFilterToChannel(
 	const uint16_t                              channel,
 	Diskerror::ProgressBar&                     progressBar
 ) {
-	const uint16_t      numChannels = audioFile.GetNumChannels();
-	const uint_fast64_t numSamples  = audioFile.GetNumSamples();
+	const uint16_t      numChannels = audioFile.getNumChannels();
+	const uint_fast64_t numSamples  = audioFile.getNumFrames();
 	const auto          halfSinc    = static_cast<int_fast32_t>(sinc.getMo2());
 
 	// For each input sample in the channel

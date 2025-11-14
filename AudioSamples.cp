@@ -38,7 +38,7 @@ void AudioSamples::assertDataFormat() const {
 
 //	Maximum value storable == 2^(nBits-1) - 1
 float32_t AudioSamples::GetSampleMaxMagnitude() {
-    switch (this->GetBitsPerSample()) {
+    switch (this->getBitsPerSample()) {
         case 8:
             return MAX_VALUE_8_BIT; //         127
 
@@ -83,7 +83,7 @@ float32_t AudioSamples::Dither() {
  */
 void AudioSamples::ReadSamples() {
     this->assertDataFormat();
-    auto dataBlock = this->ReadRawData();
+    auto dataBlock = this->ReadAllData();
     const auto tempFloat = reinterpret_cast<float32_t*>(dataBlock);
 
     uint_fast64_t  s; //	Index variable for samples.
@@ -273,7 +273,7 @@ void AudioSamples::WriteSamples(const bool do_dither) {
         }
     }
 
-    WriteRawData(dataBlock);
+    WriteAllData(dataBlock);
     if (dataBlock != reinterpret_cast<unsigned char*>(samples.data())) delete dataBlock;
 }
 

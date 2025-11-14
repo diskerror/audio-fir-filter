@@ -357,9 +357,9 @@ void AudioFile::openAIFC() {
 
 
 //	Maximum value storable == 2^(nBits-1) - 1
-float32_t AudioFile::GetSampleMaxMagnitude() const {
+float32_t AudioFile::getSampleMaxMagnitude() const {
     //	if ( dataEncoding != 'PCM ' ) throw logic_error("Only PCM sammples have a maximum magnitude.");
-    switch (this->GetBitsPerSample()) {
+    switch (this->getBitsPerSample()) {
         case 8:
             return MAX_VALUE_8_BIT; //        127
 
@@ -379,7 +379,7 @@ float32_t AudioFile::GetSampleMaxMagnitude() const {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-unsigned char* AudioFile::ReadRawData() {
+unsigned char* AudioFile::ReadAllData() {
     const auto data = static_cast<unsigned char*>(calloc(this->dataBlockSize + 8, 1));
     this->fileStm.clear();
     this->fileStm.seekg(this->dataBlockStart);
@@ -388,7 +388,7 @@ unsigned char* AudioFile::ReadRawData() {
 }
 
 
-void AudioFile::WriteRawData(const unsigned char*data) {
+void AudioFile::WriteAllData(const unsigned char*data) {
     this->fileStm.clear();
     this->fileStm.seekp(this->dataBlockStart);
     this->fileStm.write(reinterpret_cast<const char*>(data), this->dataBlockSize);

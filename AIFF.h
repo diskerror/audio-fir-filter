@@ -7,16 +7,19 @@
 #pragma once
 
 #include <boost/endian.hpp>
-#include <boost/math/cstdfloat/cstdfloat_types.hpp>
-
-using namespace boost;
-using namespace boost::endian;
 
 #include <cmath>
 #include <limits>
 
 using namespace std;
+using namespace boost;
+using namespace boost::endian;
 
+//	Four-character code.
+#ifndef HAS_FOURCC_T
+#define HAS_FOURCC_T
+typedef big_uint32_t fourcc_t;
+#endif
 
 inline long double bigExt80ToNativeLongDouble(const char*data) {
 	typedef struct {

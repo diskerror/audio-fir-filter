@@ -1,7 +1,13 @@
 
 #	Compiler
-COMP = clang++ -std=c++23 -Wall -Winvalid-pch -Wno-macro-redefined -O3 \
-    -I/opt/local/include/ -I/opt/local/libexec/boost/1.87/include
+CP 	= clang++
+
+#	Boost version
+BV = 1.87
+
+CXXFLAGS = -std=c++23 -Wall -Winvalid-pch -Wno-macro-redefined  -O3 \
+	-I /opt/local/include/ -I /opt/local/libexec/boost/$(BV)/include \
+	-L /usr/local/lib -L /opt/local/libexec/boost/$(BV)/lib
 
 SRCS=$(wildcard *.cp)
 HDRS=$(wildcard *.h)
@@ -11,7 +17,7 @@ HDRS=$(wildcard *.h)
 all: lowcut
 
 lowcut: $(SRCS) $(HDRS) makefile
-	$(COMP) $(SRCS) -o $@
+	$(CP) $(CXXFLAGS) $(SRCS) -o $@
 
 test: lowcut
 	@rm -rf ~/Desktop/test\ audio

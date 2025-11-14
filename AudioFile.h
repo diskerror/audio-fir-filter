@@ -10,7 +10,10 @@
 #include <fstream>
 
 #include <boost/cstdfloat.hpp>
-#include <boost/endian.hpp>
+#include <boost/endian/arithmetic.hpp>
+
+#include "AIFF.h"
+#include "Wave.h"
 
 namespace Diskerror {
 using namespace std;
@@ -23,63 +26,64 @@ using namespace boost::endian;
  *	The file size and type cannot be changed.
  */
 class AudioFile {
-    fstream fileStm;
+	fstream fileStm;
 
 protected:
-    // These properties are used as four character codes.
-    big_uint32_t fileType      = 0x00000000; // RIFF, RF64, FORM
-    big_uint32_t fileSubType   = 0x00000000; // WAVE, AIFF, AIFC
-    big_uint32_t dataEncoding  = 0x00000000; // 'PCM ' integers, 'IEEE' floats
-    big_uint32_t dataEndianess = 0x00000000; // 'big ' or 'litl'
+	// These properties are used as four character codes.
+	big_uint32_t fileType      = 0x00000000; // RIFF, RF64, FORM
+	big_uint32_t fileSubType   = 0x00000000; // WAVE, AIFF, AIFC
+	big_uint32_t dataEncoding  = 0x00000000; // 'PCM ' integers, 'IEEE' floats
+	big_uint32_t dataEndianess = 0x00000000; // 'big ' or 'litl'
 
-    big_uint32_t dataType       = 0x00000000;
-    uint16_t     numChannels    = 0;
-    uint32_t     sampleRate     = 0;
-    uint16_t     bitsPerSample  = 0;
-    int64_t      numSamples     = 0;
-    int64_t      dataBlockStart = 0;
-    int64_t      dataBlockSize  = 0;
+	big_uint32_t dataType       = 0x00000000;
+	uint16_t     numChannels    = 0;
+	uint32_t     sampleRate     = 0;
+	uint16_t     bitsPerSample  = 0;
+	int64_t      numSamples     = 0;
+	int64_t      dataBlockStart = 0;
+	int64_t      dataBlockSize  = 0;
 
-    void openRIFF(); //	RIFF/WAVE < 4G
-    void openRF64(); //	RF64/WAVE > 4G
-    void openAIFF(); //	FORM/AIFF < 4G
-    void openAIFC(); //	FORM/AIFC   ?
+	void openRIFF(); //	RIFF/WAVE < 4G
+	void openRF64(); //	RF64/WAVE > 4G
+	void openAIFF(); //	FORM/AIFF < 4G
+	void openAIFC(); //	FORM/AIFC   ?
 
 public:
-    constexpr static float32_t MAX_VALUE_8_BIT  = 127.0;
-    constexpr static float32_t MAX_VALUE_16_BIT = 32767.0;
-    constexpr static float32_t MAX_VALUE_24_BIT = 8388607.0;
+	constexpr static float32_t MAX_VALUE_8_BIT  = 127.0;
+	constexpr static float32_t MAX_VALUE_16_BIT = 32767.0;
+	constexpr static float32_t MAX_VALUE_24_BIT = 8388607.0;
 
-    // Constructor
-    explicit AudioFile(const filesystem::path& fPath);
+	// Constructor
+	explicit AudioFile(const filesystem::path& fPath);
 
-    // Destructor
-    ~AudioFile() = default;
+	// Destructor
+	~AudioFile() = default;
 
-    const filesystem::path file;
+	const filesystem::path file;
 
-    big_uint32_t GetDataEncoding() const { return this->dataEncoding; };
+	fourcc_t getDataEncoding() const { return this->dataEncoding; };
 
-    bool is_pcm() const { return this->dataEncoding == static_cast<big_uint32_t>('PCM '); }
+	bool is_pcm() const { return this->dataEncoding == static_cast<big_uint32_t>('PCM '); }
 
-    big_uint32_t GetDataEndianess() const { return this->dataEndianess; };
+	big_uint32_t GetDataEndianess() const { return this->dataEndianess; };
 
-    uint16_t GetNumChannels() const { return this->numChannels; };
+	uint16_t getNumChannels() const { return this->numChannels; };
 
-    uint32_t GetSampleRate() const { return this->sampleRate; };
+	uint32_t getSampleRate() const { return this->sampleRate; };
 
-    uint16_t GetBitsPerSample() const { return this->bitsPerSample; };
+	uint16_t getBitsPerSample() const { return this->bitsPerSample; };
 
-    int64_t GetNumSamples() const { return this->numSamples; };
+	int64_t getNumFrames() const { return this->numSamples; };
 
-    int64_t GetDataBlockSize() const { return this->dataBlockSize; };
+	int64_t getDataSize() const { return this->dataBlockSize; };
 
-    float32_t GetSampleMaxMagnitude() const;
+	float32_t getSampleMaxMagnitude() const;
 
-    unsigned char* ReadRawData();
+	unsigned char* ReadAllData();
 
-    void WriteRawData(const unsigned char*);
+	void WriteAllData(const unsigned char*);
 };
+
 } // namespace Diskerror
 
 #endif // DISKERROR_AUDIOFILE_H
