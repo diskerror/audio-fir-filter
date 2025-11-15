@@ -17,8 +17,8 @@ using namespace boost;
 
 #include "AudioSamples.h"
 #include "ProgressBar.h"
-#include "VectorMath.h"
-#include "WindowedSinc.h"
+#include <VectorMath.h>
+#include <WindowedSinc.h>
 
 //	Default values.
 #define TEMP_FREQ  15

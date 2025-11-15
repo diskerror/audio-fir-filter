@@ -10,7 +10,7 @@
 #include <boost/endian.hpp>
 
 #include "AudioFile.h"
-#include "VectorMath.h"
+#include <VectorMath.h>
 
 namespace Diskerror {
 

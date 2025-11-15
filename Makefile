@@ -6,8 +6,8 @@ CP 	= clang++
 BV = 1.87
 
 CXXFLAGS = -std=c++23 -Wall -Winvalid-pch -Wno-macro-redefined  -O3 \
-	-I /opt/local/include/ -I /opt/local/libexec/boost/$(BV)/include \
-	-L /usr/local/lib -L /opt/local/libexec/boost/$(BV)/lib
+	-I/opt/local/include/ -I/opt/local/libexec/boost/$(BV)/include -I../c_lib \
+	-L/usr/local/lib -L/opt/local/libexec/boost/$(BV)/lib
 
 SRCS=$(wildcard *.cp)
 HDRS=$(wildcard *.h)
