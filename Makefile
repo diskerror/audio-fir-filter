@@ -1,13 +1,13 @@
 
-#	Compiler
-CP 	= clang++
+#	Compiler (not clang)
+CP 	= g++ -std=c++23 -Wall -Winvalid-pch -Wno-macro-redefined  -O3
 
 #	Boost version
 BV = 1.87
 
-CXXFLAGS = -std=c++23 -Wall -Winvalid-pch -Wno-macro-redefined  -O3 \
-	-I/opt/local/include/ -I/opt/local/libexec/boost/$(BV)/include -I../c_lib \
-	-L/usr/local/lib -L/opt/local/libexec/boost/$(BV)/lib
+CXXFLAGS = -I/opt/local/include/ -I/opt/local/libexec/boost/$(BV)/include -I../c_lib \
+	-L/usr/local/lib -L/opt/local/libexec/boost/$(BV)/lib \
+	-L../c_lib/lib -ldiskerror_audio
 
 SRCS=$(wildcard *.cp)
 HDRS=$(wildcard *.h)
