@@ -20,6 +20,11 @@ using namespace boost;
 #include <VectorMath.h>
 #include <WindowedSinc.h>
 
+#ifndef RAW_DEBUG
+#define RAW_DEBUG
+// #define RAW_DEBUG std::cout << __FILE__ << ":" << __LINE__ << " " << __func__ << std::endl;
+#endif
+
 //	Default values.
 #define TEMP_FREQ  15
 #define TEMP_SLOPE 10
@@ -118,10 +123,12 @@ int main(const int argc, char** argv) {
 		//  Loop over file names.
 		for (uint32_t a = optind; a < argc; a++) {
 			//	open and read file
+			showStatus("Opening file");
 			auto audioFile    = Diskerror::AudioFile(filesystem::path(argv[a]));
 			auto audioSamples = Diskerror::AudioSamples(&audioFile);
+
 			cout << "Processing file: " << audioFile.filePath.filename() << endl;
-			showStatus("Opening and reading");
+			showStatus("Reading file");
 			audioSamples.ReadSamples();
 
 			//	create windowed sinc kernal
@@ -163,9 +170,13 @@ int main(const int argc, char** argv) {
 			showStatus("");
 		} //  End loop over file names.
 	}     // End try
-	catch (const std::exception& e) {
+	catch (std::exception e) {
+		cerr << "Caught an exception: " << endl;
 		cerr << e.what() << endl;
 		exitVal = EXIT_FAILURE;
+	}
+	catch (...) {
+		cerr << "Caught an unknown exception." << endl;
 	}
 
 	return exitVal;

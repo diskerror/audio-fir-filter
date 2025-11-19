@@ -22,7 +22,7 @@ lowcut: $(SRCS) $(HDRS) makefile
 test: lowcut
 	@rm -rf ~/Desktop/test\ audio
 	@cp -a ~/ownCloud/test\ audio ~/Desktop
-	time ./lowcut -f 330 -s 80 -n ~/Desktop/test\ audio/*.{wav,aif}
+	time ./lowcut -v -f 330 -s 80 -n ~/Desktop/test\ audio/*.{wav,aif}
 
 clean:
 	rm lowcut
