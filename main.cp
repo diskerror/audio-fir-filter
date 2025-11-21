@@ -20,22 +20,16 @@ using namespace boost;
 #include <VectorMath.h>
 #include <WindowedSinc.h>
 
-#ifndef RAW_DEBUG
-#define RAW_DEBUG
-// #define RAW_DEBUG std::cout << __FILE__ << ":" << __LINE__ << " " << __func__ << std::endl;
-#endif
-
 //	Default values.
 #define TEMP_FREQ  15
 #define TEMP_SLOPE 10
 
 void ApplyFIRFilterToChannel(
-		const Diskerror::AudioFile&                 audioFile,
-		const Diskerror::AudioSamples&              audioSamples,
-		const Diskerror::WindowedSinc<long double>& sinc,
-		Diskerror::VectorMath<float32_t>&           tempOutput,
-		uint16_t                                    channel,
-		Diskerror::ProgressBar&                     progressBar
+		Diskerror::AudioSamples&            audioSamples,
+		Diskerror::WindowedSinc<float64_t>& sinc,
+		Diskerror::VectorMath<float32_t>&   tempOutput,
+		uint16_t                            channel,
+		Diskerror::ProgressBar&             progressBar
 	);
 
 
@@ -61,8 +55,8 @@ int main(const int argc, char** argv) {
 		//	A freq of 20 Hz and slope of 20 Hz means that 30 Hz is 0 dB and 10 Hz is
 		//	approximately -80dB with ripple.
 		//	Ripple is only in the stop band using Blackman or Hamming windows.
-		double freq  = TEMP_FREQ;  //	Fc = freq / sampleRate
-		double slope = TEMP_SLOPE; //	transition ~= slope / sampleRate
+		float64_t freq  = TEMP_FREQ;  //	Fc = freq / sampleRate
+		float64_t slope = TEMP_SLOPE; //	transition ~= slope / sampleRate
 
 		while (opt != -1) {
 			int option_index = 0;
@@ -120,63 +114,65 @@ int main(const int argc, char** argv) {
 		// Show status when verbose is true.
 		std::function<void(string const&)> showStatus = [](string const&) { return; };
 		if (verbose) showStatus = [](string const& s) { cout << s << endl; };
+
 		//  Loop over file names.
-		for (uint32_t a = optind; a < argc; a++) {
+		for (int a = optind; a < argc; a++) {
 			//	open and read file
 			showStatus("Opening file");
-			auto audioFile    = Diskerror::AudioFile(filesystem::path(argv[a]));
-			auto audioSamples = Diskerror::AudioSamples(&audioFile);
+			Diskerror::AudioSamples audioSamples(argv[a]);
 
-			cout << "Processing file: " << audioFile.filePath.filename() << endl;
+			cout << "Processing file: " << audioSamples.getFileName() << endl;
 			showStatus("Reading file");
 			audioSamples.ReadSamples();
 
 			//	create windowed sinc kernal
 			showStatus("Creating sinc kernal for this file's sample rate.");
-			Diskerror::WindowedSinc<long double>
-			sinc(freq / audioFile.getSampleRate(), slope / audioFile.getSampleRate());
+			Diskerror::WindowedSinc<float64_t>
+				sinc(freq / audioSamples.getSampleRate(), slope / audioSamples.getSampleRate());
 			sinc.ApplyBlackman();
 			sinc.MakeLowCut();
 
 			//	define temporary output buffer[chan][samps],
 			showStatus("Creating temporary buffer.");
 			Diskerror::VectorMath<float32_t>
-			tempOutput(audioFile.getNumFrames());
+				tempOutput(audioSamples.getNumSamples());
 
 			Diskerror::ProgressBar
-			progressBar(static_cast<float>(audioFile.getNumFrames()), 7919);
+				progressBar(static_cast<float32_t>(audioSamples.getNumSamples()), 7919);
 
-			for (uint16_t channel = 0; channel < audioFile.getNumChannels(); channel++) {
-				ApplyFIRFilterToChannel(audioFile, audioSamples, sinc, tempOutput, channel, progressBar);
+			for (uint16_t channel = 0; channel < audioSamples.getNumChannels(); channel++) {
+				ApplyFIRFilterToChannel(audioSamples, sinc, tempOutput, channel, progressBar);
 			}
 
 			progressBar.Final();
 
-			//	copy result back to our original file
-			showStatus("Copying data back to file's sample buffer.");
-			copy(tempOutput.begin(), tempOutput.end(), audioSamples.samples.begin());
+			// copy result back to our original file
+			showStatus("Copying data back to file's buffer.");
+			copy(tempOutput.begin(), tempOutput.end(), audioSamples.begin());
 			tempOutput.resize(0);
 
-			//	Normalize if new sample stream goes over maximum sample size.
-			//  A DC offset in one direction may cause overflow in the other direction when removed.
-			if (audioSamples.samples.max_mag() > audioSamples.GetSampleMaxMagnitude() || normalize) {
+			// Normalize if new sample stream goes over maximum sample size.
+			// A DC offset in one direction may cause overflow in the other direction when removed.
+			if (audioSamples.max_mag() > audioSamples.getSampleMaxMagnitude() || normalize) {
 				showStatus("Doing audio normalize.");
 				audioSamples.Normalize();
 			}
 
 			showStatus("Converting and writing samples back to file.");
 			audioSamples.WriteSamples(true);
+			audioSamples.clear();
+			audioSamples.shrink_to_fit();
 
 			showStatus("");
 		} //  End loop over file names.
 	}     // End try
-	catch (std::exception e) {
-		cerr << "Caught an exception: " << endl;
+	catch (const std::exception& e) {
 		cerr << e.what() << endl;
 		exitVal = EXIT_FAILURE;
 	}
 	catch (...) {
 		cerr << "Caught an unknown exception." << endl;
+		exitVal = EXIT_FAILURE;
 	}
 
 	return exitVal;
@@ -184,29 +180,28 @@ int main(const int argc, char** argv) {
 
 // Extracted FIR filtering for a single channel
 void ApplyFIRFilterToChannel(
-		const Diskerror::AudioFile&                 audioFile,
-		const Diskerror::AudioSamples&              audioSamples,
-		const Diskerror::WindowedSinc<long double>& sinc,
-		Diskerror::VectorMath<float32_t>&           tempOutput,
-		const uint16_t                              channel,
-		Diskerror::ProgressBar&                     progressBar
+		Diskerror::AudioSamples&            audioSamples,
+		Diskerror::WindowedSinc<float64_t>& sinc,
+		Diskerror::VectorMath<float32_t>&   tempOutput,
+		uint16_t                            channel,
+		Diskerror::ProgressBar&             progressBar
 	) {
-	const uint16_t      numChannels = audioFile.getNumChannels();
-	const uint_fast64_t numFrames   = audioFile.getNumFrames();
-	const auto          halfSinc    = static_cast<int_fast32_t>(sinc.getMo2());
+	const uint16_t     numChannels = audioSamples.getNumChannels();
+	const int_fast64_t numSamples  = audioSamples.getNumSamples();
+	const auto         halfSinc    = static_cast<int_fast32_t>(sinc.getMo2());
 
 	// For each input sample in the channel
-	for (int_fast64_t sampleIdx = channel; sampleIdx < numFrames; sampleIdx += numChannels) {
-		long double  accumulator       = 0.0;
-		int_fast64_t filteredSampleIdx = 0;
+	for (int_fast64_t sampleIdx = channel; sampleIdx < numSamples; sampleIdx += numChannels) {
+		float_fast64_t accumulator       = 0.0;
+		int_fast64_t   filteredSampleIdx = 0;
 
 		// For each sinc member
 		for (int_fast32_t m = -halfSinc; m <= halfSinc; ++m) {
 			filteredSampleIdx = sampleIdx + m * numChannels;
-			if (filteredSampleIdx < 0 || filteredSampleIdx >= numFrames) {
+			if (filteredSampleIdx < 0 || filteredSampleIdx >= numSamples) {
 				continue;
 			}
-			accumulator = fmal(audioSamples.samples[filteredSampleIdx], sinc[m + halfSinc], accumulator);
+			accumulator = fmal(audioSamples[filteredSampleIdx], sinc[m + halfSinc], accumulator);
 		}
 
 		tempOutput[sampleIdx] = static_cast<float32_t>(accumulator);
