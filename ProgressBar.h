@@ -5,9 +5,6 @@
 #ifndef DISKERROR_PROGRESSBAR_H
 #define DISKERROR_PROGRESSBAR_H
 
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -16,44 +13,40 @@ using namespace std;
 
 
 class ProgressBar {
-	const float          goal;
-	const unsigned short interval;
-	const unsigned short bar_width;
+	const float          _goal;
+	const unsigned short _interval;
+	const unsigned short _bar_width;
 
-	unsigned long long step = 0;
+	unsigned long long _step{0};
 
 public:
 	ProgressBar(const float goal, const unsigned short interval, const unsigned short bar_width = 80) :
-	goal(goal), interval(interval), bar_width(bar_width) {
+	_goal(goal), _interval(interval), _bar_width(bar_width) {
 		cout << fixed << setprecision(1) << flush;
 	}
 
-
 	~ProgressBar() = default;
-
 
 	void Update() {
 		//	progress bar, do only every x samples
-		if (this->step % this->interval == 0) {
-			const auto progress    = this->step / this->goal;
-			const auto progressPos = static_cast<unsigned short>(round(this->bar_width * progress));
+		if (_step % _interval == 0) {
+			const auto progress    = _step / _goal;
+			const auto progressPos = static_cast<unsigned short>(round(_bar_width * progress));
 
 			cout << "\r" << "["
-					<< string(progressPos, '=') << ">" << string(this->bar_width - progressPos, ' ')
+					<< string(progressPos, '=') << ">" << string(_bar_width - progressPos, ' ')
 					<< "] " << (progress * 100) << " %  " << flush;
 		}
 
-		this->step++;
+		_step++;
 	}
 
-
 	void Final() const {
-		cout << "\r" << "[" << string(this->bar_width + 1, '=') << "] 100.0 %        " << endl;
+		cout << "\r" << "[" << string(_bar_width + 1, '=') << "] 100.0 %        " << endl;
 		cout.flush();
 	}
 
-
-	void Clear() { step = 0; };
+	void Clear() { _step = 0; };
 };
 }
 
