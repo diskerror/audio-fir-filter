@@ -18,6 +18,7 @@ class ProgressBar {
 	const unsigned short _bar_width;
 
 	unsigned long long _step{0};
+	unsigned short _counter{0};
 
 public:
 	ProgressBar(const float goal, const unsigned short interval, const unsigned short bar_width = 80) :
@@ -29,7 +30,8 @@ public:
 
 	void Update() {
 		//	progress bar, do only every x samples
-		if (_step % _interval == 0) {
+		if (++_counter >= _interval) {
+			_counter = 0;
 			const auto progress    = _step / _goal;
 			const auto progressPos = static_cast<unsigned short>(round(_bar_width * progress));
 
