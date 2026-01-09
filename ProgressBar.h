@@ -7,6 +7,9 @@
 
 #include <iostream>
 #include <string>
+#include <mutex>
+#include <atomic>
+#include <vector>
 
 namespace Diskerror {
 using namespace std;
@@ -50,6 +53,34 @@ public:
 
 	void Clear() { _step = 0; };
 };
+
+// A thread-safe wrapper/helper for progress reporting
+class ThreadSafeProgress {
+	ProgressBar&        _bar;
+	std::mutex          _mutex;
+	std::atomic<size_t> _counter{0};
+	const size_t        _total;
+	const size_t        _report_interval;
+
+public:
+	ThreadSafeProgress(ProgressBar& bar, size_t total)
+		: _bar(bar), _total(total), _report_interval(total / 100 > 1000 ? total / 100 : 1000) {}
+
+	void report(size_t count) {
+		size_t old_val = _counter.fetch_add(count, std::memory_order_relaxed);
+		size_t new_val = old_val + count;
+
+		// Only acquire lock and update UI periodically to reduce contention
+		if ((new_val / _report_interval) > (old_val / _report_interval) || new_val == _total) {
+			std::lock_guard<std::mutex> lock(_mutex);
+			// Update the progress bar "count" times.
+			// Since we batch updates, we loop here. This is acceptable as the loop count is small
+			// relative to the FIR filter complexity.
+			for (size_t i = 0; i < count; ++i) _bar.Update();
+		}
+	}
+};
+
 }
 
 #endif //DISKERROR_PROGRESSBAR_H

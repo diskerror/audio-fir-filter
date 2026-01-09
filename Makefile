@@ -23,8 +23,7 @@ lowcut: $(SRCS) $(HDRS) makefile
 
 test: lowcut
 	@rm -rf ~/Desktop/test\ audio
-	@cp -a ~/ownCloud/test\ audio ~/Desktop
-	time ./lowcut -v -f 440 -s 80 -n ~/Desktop/test\ audio/*.{wav,aif}
+	time ./lowcut -v -f 440 -s 80 -n ~/ownCloud/test\ audio/*.{wav,aif} ~/Desktop/test\ audio
 	@echo "old timing (-O3): real 0m24.040s"
 	@echo "old timing (Parallel): real 0m3.307s"
 
