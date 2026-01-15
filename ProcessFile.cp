@@ -28,7 +28,7 @@ void process_file(const filesystem::path& file_path, const FilterOptions& opts) 
 
 	//	open and read file
 	show_status("Opening file");
-	AudioSamples audio_samples(file_path.c_str());
+	AudioSamples audio_samples(file_path);
 
 	cout << "Processing file: " << audio_samples.getFileName() << endl;
 	show_status("Reading file");
