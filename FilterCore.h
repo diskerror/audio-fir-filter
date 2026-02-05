@@ -9,29 +9,28 @@
 #include <cstdint>
 #include <boost/cstdfloat.hpp>
 
-#include <AudioSamples.h>
 #include <VectorMath.h>
 #include <WindowedSinc.h>
 #include "ProgressBar.h"
 
 namespace Diskerror {
+using namespace boost;
 
-// Extracted FIR filtering for a range of samples (channel agnostic)
+// FIR filtering for a range of samples on a single deinterleaved channel.
 inline void apply_filter_range(
-		AudioSamples&            audio_samples,
-		WindowedSinc<float64_t>& sinc,
-		VectorMath<float32_t>&   temp_output,
-		int_fast64_t             startIdx,
-		int_fast64_t             endIdx,
-		ThreadSafeProgress*      progress
+		const VectorMath<float32_t>&   channel,
+		const WindowedSinc<float64_t>& sinc,
+		VectorMath<float32_t>&         temp_output,
+		int_fast64_t                   startIdx,
+		int_fast64_t                   endIdx,
+		ThreadSafeProgress*            progress
 	) {
-	const int_fast64_t numChannels = audio_samples.getNumChannels();
-	const int_fast64_t numSamples  = audio_samples.getNumSamples();
-	const auto         halfSinc    = static_cast<int_fast32_t>(sinc.getMo2());
+	const auto numSamples = static_cast<int_fast64_t>(channel.size());
+	const auto halfSinc   = static_cast<int_fast32_t>(sinc.getMo2());
 
 	// Safe bounds where filter kernel fits entirely
-	const int_fast64_t startSafe = halfSinc * numChannels;
-	const int_fast64_t endSafe   = numSamples - halfSinc * numChannels;
+	const int_fast64_t startSafe = halfSinc;
+	const int_fast64_t endSafe   = numSamples - halfSinc;
 
 	int_fast64_t sampleIdx = startIdx;
 
@@ -54,45 +53,25 @@ inline void apply_filter_range(
 		}
 	};
 
-	// Loop 1: Prologue (Unsafe region at the start of the buffer)
-	// Iterate while in range AND below startSafe
+	// Loop 1: Prologue (left edge, partial kernel overlap)
 	for (; sampleIdx < endIdx && sampleIdx < startSafe; ++sampleIdx) {
-		float_fast64_t accumulator = 0.0;
-		for (int_fast32_t m = -halfSinc; m <= halfSinc; ++m) {
-			int_fast64_t filteredSampleIdx = sampleIdx + m * numChannels;
-			if (filteredSampleIdx >= 0 && filteredSampleIdx < numSamples) {
-				accumulator = fmal(audio_samples[filteredSampleIdx], sinc[m + halfSinc], accumulator);
-			}
-		}
-		temp_output[sampleIdx] = static_cast<float32_t>(accumulator);
+		int32_t overlap = static_cast<int32_t>(sampleIdx + halfSinc + 1);
+		temp_output[sampleIdx] = static_cast<float32_t>(sinc.fms(channel.begin(), -overlap));
 		report_progress();
 	}
 
-	// Loop 2: Main Body (Safe region)
-	// Iterate while in range AND below endSafe. Start where Loop 1 left off.
-	// Since sampleIdx >= startSafe (from previous loop), we just check < endSafe and < endIdx
+	// Loop 2: Main Body (full kernel overlap)
 	int_fast64_t safeLimit = (endIdx < endSafe) ? endIdx : endSafe;
 
 	for (; sampleIdx < safeLimit; ++sampleIdx) {
-		float_fast64_t accumulator = 0.0;
-		for (int_fast32_t m = -halfSinc; m <= halfSinc; ++m) {
-			accumulator = fmal(audio_samples[sampleIdx + m * numChannels], sinc[m + halfSinc], accumulator);
-		}
-		temp_output[sampleIdx] = static_cast<float32_t>(accumulator);
+		temp_output[sampleIdx] = static_cast<float32_t>(sinc.fms(channel.begin() + sampleIdx - halfSinc));
 		report_progress();
 	}
 
-	// Loop 3: Epilogue (Unsafe region at the end of the buffer)
-	// Iterate remaining
+	// Loop 3: Epilogue (right edge, partial kernel overlap)
 	for (; sampleIdx < endIdx; ++sampleIdx) {
-		float_fast64_t accumulator = 0.0;
-		for (int_fast32_t m = -halfSinc; m <= halfSinc; ++m) {
-			int_fast64_t filteredSampleIdx = sampleIdx + m * numChannels;
-			if (filteredSampleIdx >= 0 && filteredSampleIdx < numSamples) {
-				accumulator = fmal(audio_samples[filteredSampleIdx], sinc[m + halfSinc], accumulator);
-			}
-		}
-		temp_output[sampleIdx] = static_cast<float32_t>(accumulator);
+		int32_t remaining = static_cast<int32_t>(numSamples - sampleIdx + halfSinc);
+		temp_output[sampleIdx] = static_cast<float32_t>(sinc.fms(channel.begin() + sampleIdx - halfSinc, remaining));
 		report_progress();
 	}
 

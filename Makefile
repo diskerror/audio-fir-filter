@@ -3,7 +3,7 @@
 CP 	= g++ -std=c++23 -Wall -Wextra -Winvalid-pch -Wno-macro-redefined -O3
 
 #	Boost version
-BV = 1.87
+BV = 1.88
 
 CXXFLAGS = -I/opt/local/libexec/gcc15/libc++/include \
 	-I/opt/local/libexec/boost/$(BV)/include \

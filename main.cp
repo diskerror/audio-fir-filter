@@ -154,10 +154,9 @@ int main(const int argc, char** argv) {
 				throw runtime_error(std::format("File exists: {}", outputPath.string()));
 			}
 
-			show_status(std::format("Copying {} to {}", inputPath.string(), outputPath.string()));
-			fs::copy_file(inputPath, outputPath, fs::copy_options::overwrite_existing);
+			if (fs::exists(outputPath)) fs::remove(outputPath);
 
-			process_file(outputPath, opts);
+			process_file(inputPath, outputPath, opts);
 
 		} else if (paths.size() > 2) {
 			// Scenario 2: Input Files -> Output Directory
@@ -187,10 +186,9 @@ int main(const int argc, char** argv) {
 					throw runtime_error(std::format("File exists: {}", destPath.string()));
 				}
 
-				show_status(std::format("Copying {} to {}", inputPath.string(), destPath.string()));
-				fs::copy_file(inputPath, destPath, fs::copy_options::overwrite_existing);
+				if (fs::exists(destPath)) fs::remove(destPath);
 
-				process_file(destPath, opts);
+				process_file(inputPath, destPath, opts);
 			}
 		} else {
 			throw runtime_error("Invalid number of parameters. Need at least 2.");

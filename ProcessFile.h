@@ -18,7 +18,7 @@ struct FilterOptions {
 	unsigned int        num_threads;
 };
 
-void process_file(const std::filesystem::path& file_path, const FilterOptions& opts);
+void process_file(const std::filesystem::path& input_path, const std::filesystem::path& output_path, const FilterOptions& opts);
 
 } // namespace Diskerror
 
