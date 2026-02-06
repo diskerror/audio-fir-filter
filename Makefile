@@ -1,15 +1,36 @@
 
-#	Compiler (not clang)
-CP 	= g++ -std=c++23 -Wall -Wextra -Winvalid-pch -Wno-macro-redefined -O3
+# Detect Operating System
+UNAME_S := $(shell uname -s)
 
-#	Boost version
+# Language standard
+STD = c++23
+
+# Boost version
 BV = 1.88
 
-CXXFLAGS = -I/opt/local/libexec/gcc15/libc++/include \
-	-I/opt/local/libexec/boost/$(BV)/include \
-	-I../c_lib \
-	-L/opt/local/libexec/boost/$(BV)/lib \
-	-L../c_lib/lib -ldiskerror_audio
+
+ifeq ($(UNAME_S),Darwin)
+	CXX = clang++ -std=$(STD) -Wall -Wextra -Winvalid-pch \
+		-Wno-macro-redefined -Wno-multichar -O3
+
+    CXXFLAGS = -I/opt/local/libexec/boost/$(BV)/include \
+    	-I../c_lib \
+    	-L/opt/local/libexec/boost/$(BV)/lib \
+    	-L../c_lib/lib
+
+    LDLIBS = -lboost_program_options-mt -ldiskerror_audio
+else
+	# Debian 13 / Linux Configuration
+	CXX = g++ -std=$(STD) -Wall -Wextra -Winvalid-pch
+
+	CXXFLAGS = -I/usr/include \
+		-I../c_lib \
+		-L/usr/lib \
+		-L../c_lib/lib
+
+	LDLIBS = -lboost_program_options -ldiskerror_audio
+endif
+
 
 SRCS=$(wildcard *.cp)
 HDRS=$(wildcard *.h)
@@ -19,7 +40,7 @@ HDRS=$(wildcard *.h)
 all: lowcut
 
 lowcut: $(SRCS) $(HDRS) makefile
-	$(CP) $(CXXFLAGS) $(SRCS) -o $@
+	$(CXX) $(CXXFLAGS) $(SRCS) -o $@ $(LDLIBS)
 
 test: lowcut
 	@rm -rf ~/Desktop/test\ audio

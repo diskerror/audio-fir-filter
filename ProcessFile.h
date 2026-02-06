@@ -11,14 +11,18 @@
 namespace Diskerror {
 
 struct FilterOptions {
-	boost::float64_t    freq;
-	boost::float64_t    slope;
-	bool                normalize;
-	bool                verbose;
-	unsigned int        num_threads;
+	boost::float64_t freq;
+	boost::float64_t slope;
+	bool             normalize;
+	bool             verbose;
+	unsigned int     num_threads;
 };
 
-void process_file(const std::filesystem::path& input_path, const std::filesystem::path& output_path, const FilterOptions& opts);
+void process_file(
+		const std::filesystem::path& input_path,
+		const std::filesystem::path& output_path,
+		const FilterOptions&         opts
+	);
 
 } // namespace Diskerror
 

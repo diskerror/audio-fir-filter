@@ -9,13 +9,15 @@
 #include <thread>
 #include <functional>
 
-#include "FilterCore.h"
 #include <AudioFile.h>
 #include <AudioFormat.h>
 #include <AudioSamples.h>
-#include "ProgressBar.h"
+#include <DiskerrorExceptions.h>
 #include <VectorMath.h>
 #include <WindowedSinc.h>
+
+#include "FilterCore.h"
+#include "ProgressBar.h"
 
 using namespace std;
 using namespace boost;
@@ -49,12 +51,11 @@ void process_file(const filesystem::path& input_path, const filesystem::path& ou
 
 	//	Filter each channel (deinterleaved).
 	show_status("Filtering.");
+	ProgressBar progress_bar(static_cast<float32_t>(numFrames * numChannels), 7919);
+	ThreadSafeProgress safe_progress(progress_bar, numFrames * numChannels);
+
 	for (size_t ch = 0; ch < numChannels; ++ch) {
 		VectorMath<float32_t> temp_output(numFrames);
-
-		// Create progress bar and thread-safe wrapper.
-		ProgressBar progress_bar(static_cast<float32_t>(numFrames), 7919);
-		ThreadSafeProgress safe_progress(progress_bar, numFrames);
 
 		// Partition work across threads.
 		std::vector<std::thread> threads;
@@ -81,11 +82,11 @@ void process_file(const filesystem::path& input_path, const filesystem::path& ou
 			t.join();
 		}
 
-		progress_bar.Final();
-
 		// Copy result back into buffer channel.
 		buf[ch] = std::move(temp_output);
 	}
+
+	progress_bar.Final();
 
 	// Normalize if any channel exceeds 1.0 or --normalize flag is set.
 	float32_t maxMag = 0.0f;
