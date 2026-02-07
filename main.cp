@@ -28,20 +28,12 @@ namespace fs = std::filesystem;
 using namespace Diskerror;
 
 
-constexpr std::string_view HELP = R"#(
+constexpr std::string_view HELP_TEXT = R"#(
 Applies low-cut (high-pass) FIR filter to WAVE or AIFF file.
 Usage:
   lowcut [options] <input_file> <output_file>
   lowcut [options] <input_file1> [input_file2 ...] <output_directory>
-
-    -f, --frequency <Hz>   Filter cutoff frequency (default: 15).
-    -s, --slope <Hz>       Filter slope width (default: 10).
-    -n, --normalize        Normalize output to maximum level.
-    -v, --verbose          Verbose output.
-    -t, --threads <N>      Number of threads.
-    -O, --overwrite        Overwrite existing files.
-    -h, --help             Display this help message.
-)#";
+Options)#";
 
 
 int main(const int argc, char** argv) {
@@ -51,13 +43,12 @@ int main(const int argc, char** argv) {
 		FilterOptions opts={0,0,false,false,0};
 		bool          overwrite = false;
 
-		po::options_description p_opt("Allowed options");
+		po::options_description p_opt(HELP_TEXT.data());
 		p_opt.add_options()
-		    ("help,h", po::bool_switch(), "Display this help message.")
 		    ("frequency,f", po::value<float64_t>(&opts.freq)->default_value(15),
-		    	"Filter cutoff frequency (default: 15).")
+		    	"Filter cutoff frequency in Hz.")
 		    ("slope,s", po::value<float64_t>(&opts.slope)->default_value(10),
-		    	"Filter slope width (default: 10).")
+		    	"Filter slope width in Hz.")
 		    ("normalize,n", po::bool_switch(&opts.normalize),
 		    	"Normalize output to maximum level.")
 		    ("verbose,v", po::bool_switch(&opts.verbose),
@@ -66,6 +57,7 @@ int main(const int argc, char** argv) {
 		    	"Number of threads (default is 2/3 of the processors available).")
 		    ("overwrite,O", po::bool_switch(&overwrite),
 		    	"Overwrite existing files.")
+		    ("help,h", po::bool_switch(), "Display this help message.")
 		;
 
 		// Hidden option for positional file args
@@ -92,7 +84,8 @@ int main(const int argc, char** argv) {
 		po::notify(vm);
 
 		if (vm["help"].as<bool>()) {
-			throw StopNoError(HELP.data());
+			p_opt.print(std::cout, 32);
+			throw StopNoError();
 		}
 
 		// Show status when verbose is set.
@@ -185,7 +178,8 @@ int main(const int argc, char** argv) {
 		}
 	} // End try
 	catch (StopNoError &e) {
-		std::cerr << e.what() << std::endl;
+		std::string s = e.what();
+		if (s.length()) std::cout << s << std::endl;
 	}
 	catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;
