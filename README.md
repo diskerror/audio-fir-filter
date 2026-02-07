@@ -36,18 +36,20 @@ make
 
 ### Options
 
-* `-f, --frequency <Hz>`: Filter cutoff frequency (default: 15Hz).
-* `-s, --slope <Hz>`: Filter transition band width (default: 10Hz).
-* `-n, --normalize`: Normalize the output to the maximum bit depth.
-* `-O, --overwrite`: Overwrite existing files.
-* `-t, --threads <N>`: Set number of threads (defaults to ~70% of cores).
-* `-v, --verbose`: Enable verbose status output.
+```
+  -f, --frequency <Hz>  Filter cutoff frequency in Hz.
+  -s, --slope <Hz>      Filter transition band width in Hz.
+  -n, --normalize       Normalize the output to the maximum bit depth.
+  -O, --overwrite       Overwrite existing files.
+  -t, --threads <N>     Set number of threads (defaults to 2/3 of cores).
+  -v, --verbose         Enable verbose status output.
+```
 
 ## Architecture & Algorithm
 
 The core algorithm is a Windowed-sinc FIR filter, using Blackman window.
 
-* **Tech Stack:** C++23, Boost (Endian, cstdfloat), `c_lib`.
+* **Tech Stack:** C++23, Boost (Endian, Program Options), `c_lib`.
 * **Structure:**
     * `main.cp`: Argument parsing and scenario logic.
     * `ProcessFile.cp`: File I/O orchestration.
