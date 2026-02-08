@@ -3,29 +3,24 @@
 //
 
 #include <cmath>
-#include <cstdint>
-#include <cstdio>
 #include <cstdlib>
 #include <DiskerrorExceptions.h>
 #include <filesystem>
 #include <format>
 #include <functional>
-#include <getopt.h>
 #include <iostream>
-#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include <boost/cstdfloat.hpp>
-#include <boost/program_options.hpp>
+#include <ProgramOptions.h>
 
 #include "ProcessFile.h"
 
-using namespace boost;
-namespace po = program_options;
 namespace fs = std::filesystem;
 using namespace Diskerror;
+using boost::float64_t;
 
 
 constexpr std::string_view HELP_TEXT = R"#(
@@ -43,7 +38,7 @@ int main(const int argc, char** argv) {
 		FilterOptions opts={0,0,false,false,0};
 		bool          overwrite = false;
 
-		po::options_description p_opt(HELP_TEXT.data());
+		ProgramOptions p_opt(HELP_TEXT);
 		p_opt.add_options()
 		    ("frequency,f", po::value<float64_t>(&opts.freq)->default_value(15),
 		    	"Filter cutoff frequency in Hz.")
@@ -60,32 +55,14 @@ int main(const int argc, char** argv) {
 		    ("help,h", po::bool_switch(), "Display this help message.")
 		;
 
-		// Hidden option for positional file args
-		po::options_description hidden;
-		hidden.add_options()
+		p_opt.add_hidden_options()
 			("paths", po::value<std::vector<std::string>>(), "Input/output paths.");
+		p_opt.add_positional("paths", -1);
 
-		// Combine for parsing (but only show p_opt in help)
-		po::options_description all_options;
-		all_options.add(p_opt).add(hidden);
+		p_opt.run(argc, argv);
 
-		po::positional_options_description pos;
-		pos.add("paths", -1);  // -1 = unlimited positional args
-
-		po::variables_map vm;
-
-		po::store(
-			  po::command_line_parser(argc, argv)
-				  .options(all_options)
-				  .positional(pos)
-				  .run(),
-			  vm);
-
-		po::notify(vm);
-
-		if (vm["help"].as<bool>()) {
-			p_opt.print(std::cout, 32);
-			throw StopNoError();
+		if (p_opt["help"].as<bool>()) {
+			throw StopNoError(p_opt.to_string());
 		}
 
 		// Show status when verbose is set.
@@ -101,10 +78,8 @@ int main(const int argc, char** argv) {
 		show_status(std::format("Using {} threads.", opts.num_threads));
 
 		// Collect non-option arguments
-		std::vector<fs::path> paths;
-		for (auto& s : vm["paths"].as<std::vector<std::string>>()) {
-			paths.push_back(s);
-		}
+		auto pathStrings = p_opt.getParams("paths");
+		std::vector<fs::path> paths(pathStrings.begin(), pathStrings.end());
 
 		if (paths.size() == 2) {
 			// Scenario 1: Input File -> Output File
@@ -112,22 +87,21 @@ int main(const int argc, char** argv) {
 			const fs::path& outputPath = paths[1];
 
 			if (!fs::exists(inputPath) || !fs::is_regular_file(inputPath)) {
-				throw std::runtime_error(
-					std::format("Input file does not exist or is not a file: {}", inputPath.string()));
+				throw FileNotFound(inputPath.string());
 			}
 
 			if (fs::exists(outputPath) && fs::is_directory(outputPath)) {
-				throw std::runtime_error(
+				throw UsageError(
 					"With two parameters the second parameter must be a file path, not a directory.");
 			}
 
 			if (inputPath.extension() != outputPath.extension()) {
-				throw std::runtime_error(
+				throw UsageError(
 					"Input and output file types (WAVE or AIFF) must be the same (extensions must match).");
 			}
 
 			if (fs::exists(outputPath) && !overwrite) {
-				throw std::runtime_error(std::format("File exists: {}", outputPath.string()));
+				throw FileExists(outputPath.string());
 			}
 
 			if (fs::exists(outputPath)) fs::remove(outputPath);
@@ -141,13 +115,13 @@ int main(const int argc, char** argv) {
 
 			if (fs::exists(destDir)) {
 				if (!fs::is_directory(destDir)) {
-					throw std::runtime_error(
+					throw UsageError(
 						std::format("Destination exists but is not a directory: {}", destDir.string()));
 				}
 			}
 			else {
 				if (destDir.has_extension()) {
-					throw std::runtime_error(std::format(
+					throw UsageError(std::format(
 						"Destination directory '{}' does not exist and has a suffix. Undefined scenario.",
 						destDir.string()));
 				}
@@ -158,14 +132,13 @@ int main(const int argc, char** argv) {
 			for (size_t i = 0; i < paths.size() - 1; ++i) {
 				const fs::path& inputPath = paths[i];
 				if (!fs::exists(inputPath) || !fs::is_regular_file(inputPath)) {
-					throw std::runtime_error(std::format("Input file does not exist or is not a file: {}",
-													inputPath.string()));
+					throw FileNotFound(inputPath.string());
 				}
 
 				fs::path destPath = destDir / inputPath.filename();
 
 				if (fs::exists(destPath) && !overwrite) {
-					throw std::runtime_error(std::format("File exists: {}", destPath.string()));
+					throw FileExists(destPath.string());
 				}
 
 				if (fs::exists(destPath)) fs::remove(destPath);
@@ -174,7 +147,7 @@ int main(const int argc, char** argv) {
 			}
 		}
 		else {
-			throw std::runtime_error("Invalid number of parameters. Need at least 2.");
+			throw UsageError("Invalid number of parameters. Need at least 2.");
 		}
 	} // End try
 	catch (StopNoError &e) {

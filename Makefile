@@ -18,7 +18,7 @@ ifeq ($(UNAME_S),Darwin)
     	-L/opt/local/libexec/boost/$(BV)/lib \
     	-L../c_lib/lib
 
-    LDLIBS = -lboost_program_options-mt -ldiskerror_audio
+    LDLIBS = -lboost_program_options-mt -ldiskerror_options -ldiskerror_audio
 else
 	# Debian 13 / Linux Configuration
 	CXX = g++ -std=$(STD) -Wall -Wextra -Winvalid-pch
@@ -28,7 +28,7 @@ else
 		-L/usr/lib \
 		-L../c_lib/lib
 
-	LDLIBS = -lboost_program_options -ldiskerror_audio
+	LDLIBS = -lboost_program_options -ldiskerror_options -ldiskerror_audio
 endif
 
 
