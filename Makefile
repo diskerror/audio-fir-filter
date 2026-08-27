@@ -8,27 +8,29 @@ STD = c++23
 # Boost version
 BV = 1.88
 
+# c_lib is a sibling project consumed directly as source (no library
+# artifact to link against) — see ../c_lib/README.md.
+CLIB = ../c_lib
+CLIB_SRCS = $(CLIB)/AudioFile.cp $(CLIB)/AudioFormat.cp $(CLIB)/AudioSamples.cp $(CLIB)/ProgramOptions.cp
 
 ifeq ($(UNAME_S),Darwin)
 	CXX = clang++ -std=$(STD) -Wall -Wextra -Winvalid-pch \
 		-Wno-macro-redefined -Wno-multichar -O3
 
     CXXFLAGS = -I/opt/local/libexec/boost/$(BV)/include \
-    	-I../c_lib \
-    	-L/opt/local/libexec/boost/$(BV)/lib \
-    	-L../c_lib/lib
+    	-I$(CLIB) \
+    	-L/opt/local/libexec/boost/$(BV)/lib
 
-    LDLIBS = -lboost_program_options-mt -ldiskerror_options -ldiskerror_audio
+    LDLIBS = -lboost_program_options-mt
 else
 	# Debian 13 / Linux Configuration
 	CXX = g++ -std=$(STD) -Wall -Wextra -Winvalid-pch
 
 	CXXFLAGS = -I/usr/include \
-		-I../c_lib \
-		-L/usr/lib \
-		-L../c_lib/lib
+		-I$(CLIB) \
+		-L/usr/lib
 
-	LDLIBS = -lboost_program_options -ldiskerror_options -ldiskerror_audio
+	LDLIBS = -lboost_program_options
 endif
 
 
@@ -39,8 +41,8 @@ HDRS=$(wildcard *.h)
 
 all: lowcut
 
-lowcut: $(SRCS) $(HDRS) makefile
-	$(CXX) $(CXXFLAGS) $(SRCS) -o $@ $(LDLIBS)
+lowcut: $(SRCS) $(HDRS) $(CLIB_SRCS) makefile
+	$(CXX) $(CXXFLAGS) $(SRCS) $(CLIB_SRCS) -o $@ $(LDLIBS)
 
 test: lowcut
 	@rm -rf ~/Desktop/test\ audio
