@@ -8,13 +8,17 @@ STD = c++23
 # Boost version
 BV = 1.88
 
-# c_lib is a sibling project consumed directly as source (no library
-# artifact to link against) — see ../c_lib/README.md.
+# c_lib is a sibling project; link its prebuilt, optimized libraries from
+# ../c_lib/build/lib (built and tested by c_lib itself). `make` runs
+# c_lib's build_libs.sh first (incremental, never cleans).
 CLIB = ../c_lib
-CLIB_SRCS = $(CLIB)/AudioFile.cp $(CLIB)/AudioFormat.cp $(CLIB)/AudioSamples.cp $(CLIB)/ProgramOptions.cp
+CLIB_LIBDIR = $(CLIB)/build/lib
+CLIB_LIBS = $(CLIB_LIBDIR)/libdiskerror_audio.a $(CLIB_LIBDIR)/libdiskerror_program_options.a
 
 ifeq ($(UNAME_S),Darwin)
-	CXX = clang++ -std=$(STD) -Wall -Wextra -Winvalid-pch \
+	# Apple clang (/usr/bin), same compiler + libc++ as c_lib's prebuilt archives.
+	# MacPorts clang first on PATH fails <boost/cstdfloat.hpp> (no float64_t).
+	CXX = /usr/bin/clang++ -std=$(STD) -Wall -Wextra -Winvalid-pch \
 		-Wno-macro-redefined -Wno-multichar -O3
 
     CXXFLAGS = -I/opt/local/libexec/boost/$(BV)/include \
@@ -37,12 +41,19 @@ endif
 SRCS=$(wildcard *.cp)
 HDRS=$(wildcard *.h)
 
-.PHONY: all test clean
+.PHONY: all test clean c_lib
 
 all: lowcut
 
-lowcut: $(SRCS) $(HDRS) $(CLIB_SRCS) makefile
-	$(CXX) $(CXXFLAGS) $(SRCS) $(CLIB_SRCS) -o $@ $(LDLIBS)
+# Always ask c_lib to bring its libraries up to date (no-op when current);
+# lowcut relinks only if an archive actually changed.
+c_lib:
+	@$(CLIB)/build_libs.sh >/dev/null
+
+$(CLIB_LIBS): c_lib ;
+
+lowcut: $(SRCS) $(HDRS) $(CLIB_LIBS) Makefile
+	$(CXX) $(CXXFLAGS) $(SRCS) $(CLIB_LIBS) -o $@ $(LDLIBS)
 
 test: lowcut
 	@rm -rf ~/Desktop/test\ audio

@@ -1,7 +1,10 @@
 /.idea/
 /lowcut
 /.codebuddy/
+/.qodo/
 .DS_Store
 /lowcut.dSYM/
 GEMINI.md
 test.cpp
+/CLAUDE.md
+/.claude/
