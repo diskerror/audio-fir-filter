@@ -27,8 +27,13 @@ ifeq ($(UNAME_S),Darwin)
 
     LDLIBS = -lboost_program_options-mt
 else
-	# Debian 13 / Linux Configuration
-	CXX = g++ -std=$(STD) -Wall -Wextra -Winvalid-pch
+	# Debian 13 / Linux Configuration. clang, matching c_lib's prebuilt archives
+	# (Debian installs it versioned, e.g. clang++-19). Override: make CLANGXX=...
+	CLANGXX ?= $(shell for c in clang++ clang++-21 clang++-20 clang++-19 clang++-18 clang++-17 clang++-16; do command -v $$c && break; done)
+	ifeq ($(CLANGXX),)
+		$(error clang++ not found; install it: sudo apt install clang)
+	endif
+	CXX = $(CLANGXX) -std=$(STD) -Wall -Wextra -Winvalid-pch -Wno-multichar
 
 	CXXFLAGS = -I/usr/include \
 		-I$(CLIB) \
